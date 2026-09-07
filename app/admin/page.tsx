@@ -32,6 +32,7 @@ export default function AdminDashboardPage() {
                 <p className="font-medium text-ink">{a.titel}</p>
                 <p className="text-xs text-muted">
                   {getCategory(a.categorie)?.naam ?? a.categorie} &middot; {a.datum}
+                  {a.auteur && <> &middot; door {a.auteur}</>}
                 </p>
               </div>
               <div className="flex shrink-0 items-center gap-4 text-sm">
@@ -68,7 +69,10 @@ export default function AdminDashboardPage() {
             <li key={v.slug} className="flex items-center justify-between gap-4 py-3">
               <div>
                 <p className="font-medium text-ink">{v.vraag}</p>
-                <p className="text-xs text-muted">{getCategory(v.categorie)?.naam ?? v.categorie}</p>
+                <p className="text-xs text-muted">
+                  {getCategory(v.categorie)?.naam ?? v.categorie}
+                  {v.auteur && <> &middot; door {v.auteur}</>}
+                </p>
               </div>
               <div className="flex shrink-0 items-center gap-4 text-sm">
                 <Link href={`/vragen/${v.slug}`} className="text-muted hover:text-teal">

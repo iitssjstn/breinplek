@@ -10,6 +10,11 @@ export default function VraagForm({ vraag }: { vraag?: VraagRuw }) {
     <div className="space-y-10">
       <form action={saveVraagAction} className="space-y-5">
         {vraag && <input type="hidden" name="oldSlug" value={vraag.slug} />}
+        {vraag?.auteur && <input type="hidden" name="auteur" value={vraag.auteur} />}
+
+        {vraag?.auteur && (
+          <p className="text-xs text-muted">Oorspronkelijk aangemaakt door {vraag.auteur}</p>
+        )}
 
         <div>
           <label className="block text-sm font-medium text-ink" htmlFor="vraag">

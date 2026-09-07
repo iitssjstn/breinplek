@@ -10,6 +10,11 @@ export default function ArtikelForm({ artikel }: { artikel?: ArtikelRuw }) {
     <div className="space-y-10">
       <form action={saveArtikelAction} className="space-y-5">
         {artikel && <input type="hidden" name="oldSlug" value={artikel.slug} />}
+        {artikel?.auteur && <input type="hidden" name="auteur" value={artikel.auteur} />}
+
+        {artikel?.auteur && (
+          <p className="text-xs text-muted">Oorspronkelijk aangemaakt door {artikel.auteur}</p>
+        )}
 
         <div>
           <label className="block text-sm font-medium text-ink" htmlFor="titel">

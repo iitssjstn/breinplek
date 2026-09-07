@@ -9,7 +9,7 @@ export default function AdminLoginPage({
 }: {
   searchParams: { fout?: string };
 }) {
-  // Nog geen wachtwoord ingesteld? Dan hoort de eenmalige setup hier, niet inloggen.
+  // Nog geen account? Dan hoort de eenmalige setup hier, niet inloggen.
   if (!isSetupComplete()) {
     redirect('/admin/setup');
   }
@@ -23,18 +23,27 @@ export default function AdminLoginPage({
 
       {fout && (
         <p className="mt-4 rounded-md border border-amber-dark/30 bg-amber-light px-4 py-3 text-sm text-amber-dark">
-          Dat wachtwoord klopt niet. Probeer het opnieuw.
+          Die combinatie klopt niet. Probeer het opnieuw.
         </p>
       )}
 
       <form action={loginAction} className="mt-6 flex flex-col gap-4">
+        <label className="flex flex-col gap-1.5 text-sm font-medium text-ink">
+          Gebruikersnaam
+          <input
+            type="text"
+            name="username"
+            required
+            autoFocus
+            className="rounded-md border border-line bg-bg px-3 py-2 text-ink focus-visible:outline-teal"
+          />
+        </label>
         <label className="flex flex-col gap-1.5 text-sm font-medium text-ink">
           Wachtwoord
           <input
             type="password"
             name="password"
             required
-            autoFocus
             className="rounded-md border border-line bg-bg px-3 py-2 text-ink focus-visible:outline-teal"
           />
         </label>

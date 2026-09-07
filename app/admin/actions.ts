@@ -4,18 +4,22 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import {
-  checkPassword,
+  checkCredentials,
   completeSetup,
   createSessionCookieValue,
+  createUser,
+  deleteUser,
   isSetupComplete,
   requireAdminOrRedirect,
+  requireAdminRoleOrRedirect,
   SESSION_COOKIE_NAME,
+  type Role,
 } from '@/lib/adminAuth';
 import { writeArtikel, deleteArtikelFile, writeVraag, deleteVraagFile } from '@/lib/content';
 import { slugify } from '@/lib/slugify';
 
-function startSession() {
-  const session = createSessionCookieValue();
+function startSession(username: string) {
+  const session = createSessionCookieValue(username);
   cookies().set(SESSION_COOKIE_NAME, session.value, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
@@ -25,16 +29,21 @@ function startSession() {
   });
 }
 
-// Eenmalig: maakt het wachtwoord + de sessiesleutel aan. Doet niets als de
-// setup al eerder is voltooid (dan is deze pagina toch al niet meer bereikbaar).
+// Eenmalig: maakt het eerste account aan (rol admin) + de sessiesleutel. Doet
+// niets als de setup al eerder is voltooid (dan is deze pagina toch al niet
+// meer bereikbaar).
 export async function setupAction(formData: FormData) {
   if (isSetupComplete()) {
     redirect('/admin/login');
   }
 
+  const username = String(formData.get('username') ?? '').trim();
   const password = String(formData.get('password') ?? '');
   const bevestiging = String(formData.get('bevestiging') ?? '');
 
+  if (username.length < 2) {
+    redirect('/admin/setup?fout=gebruikersnaam');
+  }
   if (password.length < 10) {
     redirect('/admin/setup?fout=kort');
   }
@@ -42,8 +51,8 @@ export async function setupAction(formData: FormData) {
     redirect('/admin/setup?fout=mismatch');
   }
 
-  completeSetup(password);
-  startSession();
+  completeSetup(username, password);
+  startSession(username);
   redirect('/admin');
 }
 
@@ -51,11 +60,13 @@ export async function loginAction(formData: FormData) {
   if (!isSetupComplete()) {
     redirect('/admin/setup');
   }
+  const username = String(formData.get('username') ?? '').trim();
   const password = String(formData.get('password') ?? '');
-  if (!checkPassword(password)) {
+  const user = checkCredentials(username, password);
+  if (!user) {
     redirect('/admin/login?fout=1');
   }
-  startSession();
+  startSession(user.username);
   redirect('/admin');
 }
 
@@ -64,8 +75,54 @@ export async function logoutAction() {
   redirect('/admin/login');
 }
 
+// --- Gebruikersbeheer (alleen admins) ---
+
+export async function createUserAction(formData: FormData) {
+  requireAdminRoleOrRedirect();
+
+  const username = String(formData.get('username') ?? '').trim();
+  const password = String(formData.get('password') ?? '');
+  const bevestiging = String(formData.get('bevestiging') ?? '');
+  const role = (String(formData.get('role') ?? 'redacteur') as Role) === 'admin' ? 'admin' : 'redacteur';
+
+  if (username.length < 2) {
+    redirect('/admin/gebruikers?fout=gebruikersnaam');
+  }
+  if (password.length < 10) {
+    redirect('/admin/gebruikers?fout=kort');
+  }
+  if (password !== bevestiging) {
+    redirect('/admin/gebruikers?fout=mismatch');
+  }
+
+  const fout = createUser(username, password, role);
+  if (fout === 'bestaat-al') {
+    redirect('/admin/gebruikers?fout=bestaat-al');
+  }
+
+  redirect('/admin/gebruikers');
+}
+
+export async function deleteUserAction(formData: FormData) {
+  const ingelogdeGebruiker = requireAdminRoleOrRedirect();
+  const username = String(formData.get('username') ?? '');
+
+  if (username.trim().toLowerCase() === ingelogdeGebruiker.username.toLowerCase()) {
+    redirect('/admin/gebruikers?fout=zelf');
+  }
+
+  const fout = deleteUser(username);
+  if (fout === 'laatste-admin') {
+    redirect('/admin/gebruikers?fout=laatste-admin');
+  }
+
+  redirect('/admin/gebruikers');
+}
+
+// --- Content ---
+
 export async function saveArtikelAction(formData: FormData) {
-  requireAdminOrRedirect();
+  const gebruiker = requireAdminOrRedirect();
 
   const oldSlug = (String(formData.get('oldSlug') ?? '') || undefined) as string | undefined;
   const titel = String(formData.get('titel') ?? '').trim();
@@ -73,10 +130,16 @@ export async function saveArtikelAction(formData: FormData) {
   const categorie = String(formData.get('categorie') ?? '');
   const datum = String(formData.get('datum') ?? '');
   const inhoud = String(formData.get('inhoud') ?? '');
+  const bestaandeAuteur = (String(formData.get('auteur') ?? '') || undefined) as string | undefined;
 
   const slug = oldSlug ?? slugify(titel);
 
-  writeArtikel(slug, { titel, samenvatting, categorie, datum }, inhoud, oldSlug);
+  writeArtikel(
+    slug,
+    { titel, samenvatting, categorie, datum, auteur: bestaandeAuteur ?? gebruiker.username },
+    inhoud,
+    oldSlug
+  );
 
   revalidatePath('/', 'layout');
   redirect('/admin');
@@ -91,17 +154,23 @@ export async function deleteArtikelAction(formData: FormData) {
 }
 
 export async function saveVraagAction(formData: FormData) {
-  requireAdminOrRedirect();
+  const gebruiker = requireAdminOrRedirect();
 
   const oldSlug = (String(formData.get('oldSlug') ?? '') || undefined) as string | undefined;
   const vraag = String(formData.get('vraag') ?? '').trim();
   const categorie = String(formData.get('categorie') ?? '');
   const antwoordKort = String(formData.get('antwoordKort') ?? '').trim();
   const antwoord = String(formData.get('antwoord') ?? '');
+  const bestaandeAuteur = (String(formData.get('auteur') ?? '') || undefined) as string | undefined;
 
   const slug = oldSlug ?? slugify(vraag);
 
-  writeVraag(slug, { vraag, categorie, antwoordKort }, antwoord, oldSlug);
+  writeVraag(
+    slug,
+    { vraag, categorie, antwoordKort, auteur: bestaandeAuteur ?? gebruiker.username },
+    antwoord,
+    oldSlug
+  );
 
   revalidatePath('/', 'layout');
   redirect('/admin');

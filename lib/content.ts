@@ -15,6 +15,7 @@ export interface Artikel {
   samenvatting: string;
   categorie: CategorySlug;
   datum: string;
+  auteur?: string;
   leestijd: string;
   inhoudHtml: string;
 }
@@ -23,6 +24,7 @@ export interface Vraag {
   slug: string;
   vraag: string;
   categorie: CategorySlug;
+  auteur?: string;
   antwoordKortHtml: string;
   antwoordHtml: string;
 }
@@ -45,6 +47,7 @@ export function getAllArtikelen(): Artikel[] {
       samenvatting: data.samenvatting as string,
       categorie: data.categorie as CategorySlug,
       datum: data.datum as string,
+      auteur: (data.auteur as string) || undefined,
       leestijd: readingTime(content, { wordsPerMinute: 180 }).text.replace('min read', 'min leestijd'),
       inhoudHtml: html,
     };
@@ -75,6 +78,7 @@ export function getAllVragen(): Vraag[] {
       slug,
       vraag: data.vraag as string,
       categorie: data.categorie as CategorySlug,
+      auteur: (data.auteur as string) || undefined,
       antwoordKortHtml: kortHtml,
       antwoordHtml: html,
     };
@@ -98,6 +102,7 @@ export interface ArtikelRuw {
   samenvatting: string;
   categorie: CategorySlug;
   datum: string;
+  auteur?: string;
   inhoudMarkdown: string;
 }
 
@@ -105,6 +110,7 @@ export interface VraagRuw {
   slug: string;
   vraag: string;
   categorie: CategorySlug;
+  auteur?: string;
   antwoordKortMarkdown: string;
   antwoordMarkdown: string;
 }
@@ -120,6 +126,7 @@ export function getArtikelRawBySlug(slug: string): ArtikelRuw | undefined {
     samenvatting: (data.samenvatting as string) ?? '',
     categorie: data.categorie as CategorySlug,
     datum: (data.datum as string) ?? '',
+    auteur: (data.auteur as string) || undefined,
     inhoudMarkdown: content.trim(),
   };
 }
@@ -133,6 +140,7 @@ export function getVraagRawBySlug(slug: string): VraagRuw | undefined {
     slug,
     vraag: (data.vraag as string) ?? '',
     categorie: data.categorie as CategorySlug,
+    auteur: (data.auteur as string) || undefined,
     antwoordKortMarkdown: ((data.antwoordKort as string) ?? '').trim(),
     antwoordMarkdown: content.trim(),
   };
@@ -140,7 +148,7 @@ export function getVraagRawBySlug(slug: string): VraagRuw | undefined {
 
 export function writeArtikel(
   slug: string,
-  data: { titel: string; samenvatting: string; categorie: string; datum: string },
+  data: { titel: string; samenvatting: string; categorie: string; datum: string; auteur?: string },
   inhoudMarkdown: string,
   oldSlug?: string
 ) {
@@ -160,7 +168,7 @@ export function deleteArtikelFile(slug: string) {
 
 export function writeVraag(
   slug: string,
-  data: { vraag: string; categorie: string; antwoordKort: string },
+  data: { vraag: string; categorie: string; antwoordKort: string; auteur?: string },
   antwoordMarkdown: string,
   oldSlug?: string
 ) {
