@@ -1,0 +1,107 @@
+@import '@fontsource/atkinson-hyperlegible/400.css';
+@import '@fontsource/atkinson-hyperlegible/700.css';
+@import '@fontsource/atkinson-hyperlegible/400-italic.css';
+@import '@fontsource/sora/500.css';
+@import '@fontsource/sora/600.css';
+@import '@fontsource/sora/700.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-sora: 'Sora', system-ui, sans-serif;
+  --font-atkinson: 'Atkinson Hyperlegible', system-ui, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+body {
+  background-color: #FAFAF8;
+  color: #23262B;
+}
+
+::selection {
+  background-color: #E4EEEB;
+  color: #204E45;
+}
+
+/* Visible, generous focus ring everywhere -- important for keyboard users */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 3px solid #2F6E62;
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* Article body typography: short line length, generous leading */
+.article-body {
+  max-width: 42rem;
+  line-height: 1.75;
+  font-size: 1.125rem;
+}
+
+.article-body h2 {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 1.4rem;
+  margin-top: 2.25rem;
+  margin-bottom: 0.75rem;
+  color: #23262B;
+}
+
+.article-body h3 {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 1.15rem;
+  margin-top: 1.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.article-body p {
+  margin-bottom: 1.25rem;
+}
+
+.article-body ul,
+.article-body ol {
+  margin-bottom: 1.25rem;
+  padding-left: 1.5rem;
+}
+
+.article-body li {
+  margin-bottom: 0.5rem;
+}
+
+.article-body li::marker {
+  color: #2F6E62;
+}
+
+.article-body strong {
+  color: #204E45;
+}
+
+.article-body a {
+  color: #2F6E62;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}

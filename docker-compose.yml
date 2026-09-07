@@ -1,0 +1,23 @@
+version: "3.8"
+
+services:
+  breinplek:
+    image: ghcr.io/iitssjstn/breinplek:latest
+    container_name: breinplek
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    # Content op de VPS bewerken zonder de image opnieuw te bouwen:
+    # comment uit als je liever alleen de ingebakken content uit de image gebruikt.
+    volumes:
+      - ./content:/app/content:ro
+    ports:
+      - "3010:3000"
+    networks:
+      - npm_network
+
+networks:
+  npm_network:
+    external: true
+    name: npm_network
