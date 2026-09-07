@@ -8,10 +8,13 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
-    # Content op de VPS bewerken zonder de image opnieuw te bouwen:
-    # comment uit als je liever alleen de ingebakken content uit de image gebruikt.
+    # ./content  -> artikelen/vragen (markdown), aanpasbaar via /admin.
+    # ./data     -> bevat na de eenmalige setup het wachtwoord (gehasht) en de
+    #               sessiesleutel. Niet verwijderen, anders is /admin/setup
+    #               weer bereikbaar en moet je opnieuw een wachtwoord kiezen.
     volumes:
-      - ./content:/app/content:ro
+      - ./content:/app/content
+      - ./data:/app/data
     ports:
       - "3010:3000"
     networks:

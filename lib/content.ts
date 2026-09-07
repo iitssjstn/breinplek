@@ -88,3 +88,92 @@ export function getVraagBySlug(slug: string): Vraag | undefined {
 export function getVragenByCategorie(categorie: CategorySlug): Vraag[] {
   return getAllVragen().filter((v) => v.categorie === categorie);
 }
+
+// --- Onderstaande functies zijn voor het admin-panel: ze lezen ruwe markdown
+// (i.p.v. omgezette HTML) en schrijven/verwijderen bestanden in content/. ---
+
+export interface ArtikelRuw {
+  slug: string;
+  titel: string;
+  samenvatting: string;
+  categorie: CategorySlug;
+  datum: string;
+  inhoudMarkdown: string;
+}
+
+export interface VraagRuw {
+  slug: string;
+  vraag: string;
+  categorie: CategorySlug;
+  antwoordKortMarkdown: string;
+  antwoordMarkdown: string;
+}
+
+export function getArtikelRawBySlug(slug: string): ArtikelRuw | undefined {
+  const file = path.join(ARTIKELEN_DIR, `${slug}.md`);
+  if (!fs.existsSync(file)) return undefined;
+  const raw = fs.readFileSync(file, 'utf8');
+  const { data, content } = matter(raw);
+  return {
+    slug,
+    titel: (data.titel as string) ?? '',
+    samenvatting: (data.samenvatting as string) ?? '',
+    categorie: data.categorie as CategorySlug,
+    datum: (data.datum as string) ?? '',
+    inhoudMarkdown: content.trim(),
+  };
+}
+
+export function getVraagRawBySlug(slug: string): VraagRuw | undefined {
+  const file = path.join(VRAGEN_DIR, `${slug}.md`);
+  if (!fs.existsSync(file)) return undefined;
+  const raw = fs.readFileSync(file, 'utf8');
+  const { data, content } = matter(raw);
+  return {
+    slug,
+    vraag: (data.vraag as string) ?? '',
+    categorie: data.categorie as CategorySlug,
+    antwoordKortMarkdown: ((data.antwoordKort as string) ?? '').trim(),
+    antwoordMarkdown: content.trim(),
+  };
+}
+
+export function writeArtikel(
+  slug: string,
+  data: { titel: string; samenvatting: string; categorie: string; datum: string },
+  inhoudMarkdown: string,
+  oldSlug?: string
+) {
+  if (!fs.existsSync(ARTIKELEN_DIR)) fs.mkdirSync(ARTIKELEN_DIR, { recursive: true });
+  const fileContent = matter.stringify(`${inhoudMarkdown.trim()}\n`, data);
+  fs.writeFileSync(path.join(ARTIKELEN_DIR, `${slug}.md`), fileContent, 'utf8');
+  if (oldSlug && oldSlug !== slug) {
+    const oldFile = path.join(ARTIKELEN_DIR, `${oldSlug}.md`);
+    if (fs.existsSync(oldFile)) fs.unlinkSync(oldFile);
+  }
+}
+
+export function deleteArtikelFile(slug: string) {
+  const file = path.join(ARTIKELEN_DIR, `${slug}.md`);
+  if (fs.existsSync(file)) fs.unlinkSync(file);
+}
+
+export function writeVraag(
+  slug: string,
+  data: { vraag: string; categorie: string; antwoordKort: string },
+  antwoordMarkdown: string,
+  oldSlug?: string
+) {
+  if (!fs.existsSync(VRAGEN_DIR)) fs.mkdirSync(VRAGEN_DIR, { recursive: true });
+  const fileContent = matter.stringify(`${antwoordMarkdown.trim()}\n`, data);
+  fs.writeFileSync(path.join(VRAGEN_DIR, `${slug}.md`), fileContent, 'utf8');
+  if (oldSlug && oldSlug !== slug) {
+    const oldFile = path.join(VRAGEN_DIR, `${oldSlug}.md`);
+    if (fs.existsSync(oldFile)) fs.unlinkSync(oldFile);
+  }
+}
+
+export function deleteVraagFile(slug: string) {
+  const file = path.join(VRAGEN_DIR, `${slug}.md`);
+  if (fs.existsSync(file)) fs.unlinkSync(file);
+}

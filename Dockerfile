@@ -28,6 +28,11 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # and edited without rebuilding the image.
 COPY --from=builder --chown=nextjs:nodejs /app/content ./content
 
+# Writable data dir for the one-time admin setup (password hash + session
+# secret). Created here so it exists (and is owned by nextjs) even before a
+# volume is mounted over it.
+RUN mkdir -p /app/data && chown nextjs:nodejs /app/data
+
 USER nextjs
 EXPOSE 3000
 
