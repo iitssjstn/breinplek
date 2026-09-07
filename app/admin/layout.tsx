@@ -1,9 +1,9 @@
-import AdminNav from '@/components/admin/AdminNav';
+import AdminSidebar from '@/components/admin/AdminSidebar';
 
 // Elke /admin-pagina moet bij elk verzoek opnieuw checken of setup/login
-// geldig is (leest data/admin.json en cookies) — nooit statisch cachen,
+// geldig is (leest data/users.json en cookies) — nooit statisch cachen,
 // anders kan een build-time "nog geen setup"-redirect blijven hangen nadat
-// iemand het wachtwoord wél heeft ingesteld.
+// iemand wél een account heeft aangemaakt.
 export const dynamic = 'force-dynamic';
 
 export const metadata = {
@@ -13,9 +13,11 @@ export const metadata = {
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen flex-1 flex-col bg-bg">
-      <AdminNav />
-      <main className="mx-auto w-full max-w-4xl flex-1 px-5 py-10">{children}</main>
+    <div className="flex min-h-screen flex-1 flex-col bg-bg md:flex-row">
+      <AdminSidebar />
+      <main className="w-full flex-1 px-5 py-10 md:px-10">
+        <div className="mx-auto max-w-3xl">{children}</div>
+      </main>
     </div>
   );
 }
