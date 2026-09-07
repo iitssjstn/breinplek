@@ -1,31 +1,29 @@
-# Debian-based (glibc) i.p.v. Alpine (musl): Next.js' SWC-compiler heeft
-# platform-specifieke binaries, en die matchen niet altijd betrouwbaar met
-# een lockfile dat op een glibc-systeem is gegenereerd. Debian-slim voorkomt
-# die hele klasse build-fouten.
-
-# --- deps: install dependencies ---
-FROM node:20-bookworm-slim AS deps
+# --- Stage 1: dependencies ---
+FROM node:20-alpine AS deps
+RUN apk add --no-cache libc6-compat
 WORKDIR /app
-COPY package.json package-lock.json* ./
+COPY package.json package-lock.json ./
 RUN npm ci
 
-# --- builder: build the Next.js app ---
-FROM node:20-bookworm-slim AS builder
+# --- Stage 2: build ---
+FROM node:20-alpine AS builder
+RUN apk add --no-cache libc6-compat
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
 
-# --- runner: minimal production image ---
-FROM node:20-bookworm-slim AS runner
+# --- Stage 3: productie-runtime (klein, alleen wat nodig is) ---
+FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
 
-RUN groupadd --system --gid 1001 nodejs \
-  && useradd --system --uid 1001 --gid nodejs nextjs
+# Niet als root draaien
+RUN addgroup --system --gid 1001 nodejs \
+  && adduser --system --uid 1001 nextjs
 
-COPY --from=builder /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
