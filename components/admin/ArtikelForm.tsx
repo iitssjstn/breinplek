@@ -40,6 +40,7 @@ export default function ArtikelForm({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ onderwerp, categorieNaam }),
+        signal: AbortSignal.timeout(50000),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -50,8 +51,12 @@ export default function ArtikelForm({
       setSamenvatting(data.samenvatting);
       setInhoud(data.inhoud);
       setGenProvider(data.provider);
-    } catch {
-      setGenFout('Kon geen verbinding maken met de AI-provider.');
+    } catch (err) {
+      setGenFout(
+        err instanceof Error && err.name === 'TimeoutError'
+          ? 'De AI-provider reageerde niet binnen 50 seconden. Probeer het nog eens.'
+          : 'Kon geen verbinding maken met de AI-provider.'
+      );
     } finally {
       setBezigMetGenereren(false);
     }

@@ -65,12 +65,17 @@ async function viaGemini(prompt: string): Promise<string | null> {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+        signal: AbortSignal.timeout(15000),
       }
     );
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.error('[aiProviders] Gemini gaf een foutstatus:', res.status, await res.text().catch(() => ''));
+      return null;
+    }
     const data = await res.json();
     return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? null;
-  } catch {
+  } catch (err) {
+    console.error('[aiProviders] Gemini onbereikbaar of timeout:', err instanceof Error ? err.message : err);
     return null;
   }
 }
@@ -92,11 +97,23 @@ async function viaOpenAiCompatibel(
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.7,
       }),
+      signal: AbortSignal.timeout(15000),
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.error(
+        `[aiProviders] ${sleutelNaam} gaf een foutstatus:`,
+        res.status,
+        await res.text().catch(() => '')
+      );
+      return null;
+    }
     const data = await res.json();
     return data?.choices?.[0]?.message?.content ?? null;
-  } catch {
+  } catch (err) {
+    console.error(
+      `[aiProviders] ${sleutelNaam}-provider onbereikbaar of timeout:`,
+      err instanceof Error ? err.message : err
+    );
     return null;
   }
 }
