@@ -8,6 +8,7 @@
 // is verplicht: providers zonder sleutel worden gewoon overgeslagen.
 
 import fs from 'fs';
+import { getSetting } from './settings';
 
 export interface ArtikelConcept {
   titel: string;
@@ -26,7 +27,12 @@ function leesSleutel(naam: string): string | undefined {
   if (bestandsPad && fs.existsSync(bestandsPad)) {
     return fs.readFileSync(bestandsPad, 'utf8').trim();
   }
-  return process.env[naam]?.trim() || undefined;
+  const uitOmgeving = process.env[naam]?.trim();
+  if (uitOmgeving) return uitOmgeving;
+
+  // Geen environment-variabele of secret-bestand? Kijk of de sleutel via
+  // het adminpaneel (/admin/instellingen) is ingevoerd.
+  return getSetting(naam);
 }
 
 function parseJsonUitTekst<T>(ruw: string): T | null {
@@ -159,4 +165,11 @@ Geef ALLEEN geldige JSON terug, zonder markdown-codeblok, exact in dit formaat:
     return { concept: null, provider: resultaat.provider };
   }
   return { concept, provider: resultaat.provider };
+}
+
+// Server-side check of er überhaupt een provider is ingesteld — gebruikt om
+// de "Genereer concept met AI"-sectie in het formulier te verbergen zolang
+// er geen enkele sleutel is ingesteld. Voorkomt een knop die toch niks doet.
+export function isAIConfigured(): boolean {
+  return Boolean(leesSleutel('GEMINI_API_KEY') || leesSleutel('GROQ_API_KEY') || leesSleutel('OPENROUTER_API_KEY'));
 }

@@ -9,7 +9,13 @@ import { saveVraagAction, deleteVraagAction } from '@/app/admin/actions';
 const inputClass =
   'mt-1 w-full rounded-md border border-line bg-bg px-3 py-2 text-ink focus-visible:outline-teal';
 
-export default function VraagForm({ vraag }: { vraag?: VraagRuw }) {
+export default function VraagForm({
+  vraag,
+  aiBeschikbaar = false,
+}: {
+  vraag?: VraagRuw;
+  aiBeschikbaar?: boolean;
+}) {
   const [onderwerp, setOnderwerp] = useState('');
   const [genCategorie, setGenCategorie] = useState<CategorySlug>(vraag?.categorie ?? categories[0].slug);
   const [bezigMetGenereren, setBezigMetGenereren] = useState(false);
@@ -53,7 +59,7 @@ export default function VraagForm({ vraag }: { vraag?: VraagRuw }) {
 
   return (
     <div className="space-y-10">
-      {!vraag && (
+      {!vraag && aiBeschikbaar && (
         <section className="rounded-md border border-teal bg-teal-light p-4">
           <h2 className="font-heading text-sm font-semibold text-teal-dark">
             Concept genereren met AI (optioneel)

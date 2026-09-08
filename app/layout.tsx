@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Script from 'next/script';
 import './globals.css';
+import { getSetting } from '@/lib/settings';
 
 export const metadata: Metadata = {
   title: {
@@ -28,7 +29,7 @@ const themaScript = `
 `;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const adsenseClient = process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID;
+  const adsenseClient = process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID || getSetting('NEXT_PUBLIC_ADSENSE_CLIENT_ID');
 
   return (
     <html lang="nl">

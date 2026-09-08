@@ -9,7 +9,13 @@ import { saveArtikelAction, deleteArtikelAction } from '@/app/admin/actions';
 const inputClass =
   'mt-1 w-full rounded-md border border-line bg-bg px-3 py-2 text-ink focus-visible:outline-teal';
 
-export default function ArtikelForm({ artikel }: { artikel?: ArtikelRuw }) {
+export default function ArtikelForm({
+  artikel,
+  aiBeschikbaar = false,
+}: {
+  artikel?: ArtikelRuw;
+  aiBeschikbaar?: boolean;
+}) {
   const [onderwerp, setOnderwerp] = useState('');
   const [genCategorie, setGenCategorie] = useState<CategorySlug>(artikel?.categorie ?? categories[0].slug);
   const [bezigMetGenereren, setBezigMetGenereren] = useState(false);
@@ -53,7 +59,7 @@ export default function ArtikelForm({ artikel }: { artikel?: ArtikelRuw }) {
 
   return (
     <div className="space-y-10">
-      {!artikel && (
+      {!artikel && aiBeschikbaar && (
         <section className="rounded-md border border-teal bg-teal-light p-4">
           <h2 className="font-heading text-sm font-semibold text-teal-dark">
             Concept genereren met AI (optioneel)

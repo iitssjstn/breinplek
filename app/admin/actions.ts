@@ -17,6 +17,7 @@ import {
 } from '@/lib/adminAuth';
 import { writeArtikel, deleteArtikelFile, writeVraag, deleteVraagFile } from '@/lib/content';
 import { slugify } from '@/lib/slugify';
+import { setSetting } from '@/lib/settings';
 
 function startSession(username: string) {
   const session = createSessionCookieValue(username);
@@ -182,4 +183,31 @@ export async function deleteVraagAction(formData: FormData) {
   if (slug) deleteVraagFile(slug);
   revalidatePath('/', 'layout');
   redirect('/admin');
+}
+
+// --- Instellingen (alleen admins) ---
+
+export async function saveInstellingenAction(formData: FormData) {
+  requireAdminRoleOrRedirect();
+
+  // Alleen ingevulde velden worden opgeslagen/overschreven. Een leeg veld
+  // laat de bestaande waarde ongewijzigd — verwijderen gaat via de losse
+  // "Verwijderen"-knop per veld (verwijderInstellingAction), niet door het
+  // hele formulier leeg te laten en op te slaan.
+  const velden = ['GEMINI_API_KEY', 'GROQ_API_KEY', 'OPENROUTER_API_KEY', 'NEXT_PUBLIC_ADSENSE_CLIENT_ID'];
+  for (const naam of velden) {
+    const waarde = formData.get(naam);
+    if (typeof waarde === 'string' && waarde.trim()) {
+      setSetting(naam, waarde);
+    }
+  }
+
+  redirect('/admin/instellingen?opgeslagen=1');
+}
+
+export async function verwijderInstellingAction(formData: FormData) {
+  requireAdminRoleOrRedirect();
+  const naam = String(formData.get('naam') ?? '');
+  if (naam) setSetting(naam, '');
+  redirect('/admin/instellingen?verwijderd=1');
 }

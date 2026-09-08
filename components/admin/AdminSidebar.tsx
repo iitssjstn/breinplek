@@ -9,6 +9,7 @@ import {
   IconStatistieken,
   IconGebruikers,
   IconBackup,
+  IconInstellingen,
   IconBekijkSite,
 } from './icons';
 
@@ -30,6 +31,7 @@ export default function AdminSidebar() {
       ? [
           { href: '/admin/gebruikers', label: 'Gebruikers', icon: <IconGebruikers /> },
           { href: '/admin/backup', label: 'Backup', icon: <IconBackup /> },
+          { href: '/admin/instellingen', label: 'Instellingen', icon: <IconInstellingen /> },
         ]
       : [];
 
