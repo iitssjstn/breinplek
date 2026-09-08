@@ -9,9 +9,61 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Thema als CSS-variabelen: alle bestaande klassen (bg-bg, text-ink,
+ * bg-surface, border-line, bg-teal-light, enz.) verwijzen hiernaar via
+ * tailwind.config.ts. Zo hoeft geen los bestand aangepast te worden om
+ * donker thema te ondersteunen -- alleen deze twee blokken.
+ *
+ * Gebruik:
+ * - Publieke site: <html class="dark"> wordt gezet/verwijderd door de
+ *   schakelaar in de header (zie components/ThemeToggle.tsx).
+ * - Adminpaneel: staat vast in het donkere thema (zie app/admin/layout.tsx),
+ *   los van wat de bezoeker op de publieke site heeft gekozen.
+ */
 :root {
   --font-sora: 'Sora', system-ui, sans-serif;
   --font-atkinson: 'Atkinson Hyperlegible', system-ui, sans-serif;
+
+  --color-bg: #fafaf8;
+  --color-surface: #f1efe6;
+  --color-surface2: #e9e6d8;
+  --color-ink: #23262b;
+  --color-muted: #5b5f66;
+  --color-line: #dedbcc;
+
+  --color-teal: #2f6e62;
+  --color-teal-dark: #204e45;
+  --color-teal-light: #e4eeeb;
+
+  --color-plum: #5b5ca6;
+  --color-plum-dark: #42437d;
+  --color-plum-light: #eae9f5;
+
+  --color-amber: #d98e3b;
+  --color-amber-dark: #ad6d24;
+  --color-amber-light: #f8ecdb;
+}
+
+.dark {
+  --color-bg: #1b1d22;
+  --color-surface: #242730;
+  --color-surface2: #2e323c;
+  --color-ink: #e8e7e2;
+  --color-muted: #9a9fa6;
+  --color-line: #383c46;
+
+  --color-teal: #3f8c7c;
+  --color-teal-dark: #5fafa0;
+  --color-teal-light: #1e3833;
+
+  --color-plum: #7c7dc4;
+  --color-plum-dark: #9d9edb;
+  --color-plum-light: #2a2a45;
+
+  --color-amber: #d98e3b;
+  --color-amber-dark: #f0ad5c;
+  --color-amber-light: #3a2e1c;
 }
 
 html {
@@ -33,13 +85,14 @@ html {
 }
 
 body {
-  background-color: #FAFAF8;
-  color: #23262B;
+  background-color: var(--color-bg);
+  color: var(--color-ink);
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 ::selection {
-  background-color: #E4EEEB;
-  color: #204E45;
+  background-color: var(--color-teal-light);
+  color: var(--color-teal-dark);
 }
 
 /* Visible, generous focus ring everywhere -- important for keyboard users */
@@ -48,7 +101,7 @@ button:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
 select:focus-visible {
-  outline: 3px solid #2F6E62;
+  outline: 3px solid var(--color-teal);
   outline-offset: 3px;
   border-radius: 4px;
 }
@@ -66,7 +119,7 @@ select:focus-visible {
   font-size: 1.4rem;
   margin-top: 2.25rem;
   margin-bottom: 0.75rem;
-  color: #23262B;
+  color: var(--color-ink);
 }
 
 .article-body h3 {
@@ -92,15 +145,15 @@ select:focus-visible {
 }
 
 .article-body li::marker {
-  color: #2F6E62;
+  color: var(--color-teal);
 }
 
 .article-body strong {
-  color: #204E45;
+  color: var(--color-teal-dark);
 }
 
 .article-body a {
-  color: #2F6E62;
+  color: var(--color-teal);
   text-decoration: underline;
   text-decoration-thickness: 1px;
   text-underline-offset: 2px;

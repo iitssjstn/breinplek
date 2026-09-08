@@ -1,52 +1,91 @@
 import Link from 'next/link';
-import { getSessionUser } from '@/lib/adminAuth';
+import { getSessionUser, onlineGebruikers } from '@/lib/adminAuth';
 import { logoutAction } from '@/app/admin/actions';
 import AdminSidebarLinks from './AdminSidebarLinks';
+import {
+  IconOverzicht,
+  IconArtikel,
+  IconVraag,
+  IconStatistieken,
+  IconGebruikers,
+  IconBackup,
+  IconBekijkSite,
+} from './icons';
 
 export default function AdminSidebar() {
   const gebruiker = getSessionUser();
   if (!gebruiker) return null;
 
-  const items = [
-    { href: '/admin', label: 'Overzicht', exact: true },
-    { href: '/admin/artikelen/nieuw', label: '+ Nieuw artikel' },
-    { href: '/admin/vragen/nieuw', label: '+ Nieuwe vraag' },
-    { href: '/admin/statistieken', label: 'Statistieken' },
-    ...(gebruiker.role === 'admin'
-      ? [
-          { href: '/admin/gebruikers', label: 'Gebruikers' },
-          { href: '/admin/backup', label: 'Backup' },
-        ]
-      : []),
+  const online = onlineGebruikers();
+
+  const contentItems = [
+    { href: '/admin', label: 'Overzicht', icon: <IconOverzicht />, exact: true },
+    { href: '/admin/artikelen/nieuw', label: 'Nieuw artikel', icon: <IconArtikel /> },
+    { href: '/admin/vragen/nieuw', label: 'Nieuwe vraag', icon: <IconVraag /> },
+    { href: '/admin/statistieken', label: 'Statistieken', icon: <IconStatistieken /> },
   ];
 
+  const beheerItems =
+    gebruiker.role === 'admin'
+      ? [
+          { href: '/admin/gebruikers', label: 'Gebruikers', icon: <IconGebruikers /> },
+          { href: '/admin/backup', label: 'Backup', icon: <IconBackup /> },
+        ]
+      : [];
+
   return (
-    <aside className="flex shrink-0 flex-col border-b border-line bg-surface md:h-screen md:w-56 md:border-b-0 md:border-r">
-      <div className="px-4 py-4">
-        <Link href="/admin" className="font-heading text-lg font-semibold text-ink">
-          breinplek <span className="text-muted">beheer</span>
-        </Link>
+    <aside className="flex shrink-0 flex-col border-b border-line bg-surface md:sticky md:top-0 md:h-screen md:w-60 md:border-b-0 md:border-r">
+      <div className="flex items-center gap-3 px-4 py-4">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-teal font-heading text-sm font-semibold text-white">
+          {gebruiker.username.slice(0, 1).toUpperCase()}
+        </div>
+        <div className="min-w-0">
+          <p className="truncate text-sm font-medium text-ink">{gebruiker.username}</p>
+          <p className="text-xs text-muted">{gebruiker.role === 'admin' ? 'Admin' : 'Redacteur'}</p>
+        </div>
       </div>
 
-      <nav className="flex flex-1 flex-row gap-1 overflow-x-auto px-2 pb-2 md:flex-col md:overflow-visible md:px-3">
-        <AdminSidebarLinks items={items} />
+      <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-2 pb-2 md:overflow-visible">
+        <p className="mt-2 px-3 text-xs font-semibold uppercase tracking-wide text-muted">Content</p>
+        <AdminSidebarLinks items={contentItems} />
+
+        {beheerItems.length > 0 && (
+          <>
+            <p className="mt-4 px-3 text-xs font-semibold uppercase tracking-wide text-muted">Beheer</p>
+            <AdminSidebarLinks items={beheerItems} />
+          </>
+        )}
       </nav>
 
-      <div className="border-t border-line px-3 py-3">
-        <Link href="/" className="block rounded-md px-3 py-2 text-sm text-muted hover:bg-surface2">
-          ← Bekijk site
-        </Link>
-        <div className="mt-2 flex items-center justify-between px-3">
-          <div className="text-xs text-muted">
-            <p className="font-medium text-ink">{gebruiker.username}</p>
-            <p>{gebruiker.role === 'admin' ? 'Admin' : 'Redacteur'}</p>
-          </div>
-          <form action={logoutAction}>
-            <button type="submit" className="text-xs text-muted hover:text-teal">
-              Uitloggen
-            </button>
-          </form>
+      {online.length > 0 && (
+        <div className="border-t border-line px-4 py-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">Online nu</p>
+          <ul className="mt-2 space-y-1">
+            {online.map((naam) => (
+              <li key={naam} className="flex items-center gap-2 text-sm text-ink">
+                <span className="h-1.5 w-1.5 rounded-full bg-teal" />
+                {naam}
+              </li>
+            ))}
+          </ul>
         </div>
+      )}
+
+      <div className="border-t border-line px-2 py-2">
+        <Link
+          href="/"
+          className="flex items-center gap-2.5 rounded-md px-3 py-2 text-sm text-muted hover:bg-surface2"
+        >
+          <IconBekijkSite /> Bekijk site
+        </Link>
+        <form action={logoutAction}>
+          <button
+            type="submit"
+            className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left text-sm text-muted hover:bg-surface2"
+          >
+            Uitloggen
+          </button>
+        </form>
       </div>
     </aside>
   );

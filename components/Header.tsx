@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { categories } from '@/lib/categories';
+import ThemeToggle from './ThemeToggle';
 
 export default function Header() {
   return (
@@ -30,6 +31,7 @@ export default function Header() {
             </li>
           </ul>
         </nav>
+        <ThemeToggle />
       </div>
     </header>
   );

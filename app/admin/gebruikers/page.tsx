@@ -27,7 +27,7 @@ export default function GebruikersPage({ searchParams }: { searchParams: { fout?
       </p>
 
       {fout && (
-        <p className="mt-4 rounded-md border border-amber-dark/30 bg-amber-light px-4 py-3 text-sm text-amber-dark">
+        <p className="mt-4 rounded-md border border-amber-dark bg-amber-light px-4 py-3 text-sm text-amber-dark">
           {fout}
         </p>
       )}

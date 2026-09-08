@@ -1,30 +1,31 @@
 import type { Config } from 'tailwindcss';
 
 const config: Config = {
+  darkMode: 'class',
   content: ['./app/**/*.{ts,tsx}', './components/**/*.{ts,tsx}'],
   theme: {
     extend: {
       colors: {
-        bg: '#FAFAF8',
-        surface: '#F1EFE6',
-        surface2: '#E9E6D8',
-        ink: '#23262B',
-        muted: '#5B5F66',
-        line: '#DEDBCC',
+        bg: 'var(--color-bg)',
+        surface: 'var(--color-surface)',
+        surface2: 'var(--color-surface2)',
+        ink: 'var(--color-ink)',
+        muted: 'var(--color-muted)',
+        line: 'var(--color-line)',
         teal: {
-          DEFAULT: '#2F6E62',
-          dark: '#204E45',
-          light: '#E4EEEB',
+          DEFAULT: 'var(--color-teal)',
+          dark: 'var(--color-teal-dark)',
+          light: 'var(--color-teal-light)',
         },
         plum: {
-          DEFAULT: '#5B5CA6',
-          dark: '#42437D',
-          light: '#EAE9F5',
+          DEFAULT: 'var(--color-plum)',
+          dark: 'var(--color-plum-dark)',
+          light: 'var(--color-plum-light)',
         },
         amber: {
-          DEFAULT: '#D98E3B',
-          dark: '#AD6D24',
-          light: '#F8ECDB',
+          DEFAULT: 'var(--color-amber)',
+          dark: 'var(--color-amber-dark)',
+          light: 'var(--color-amber-light)',
         },
       },
       fontFamily: {

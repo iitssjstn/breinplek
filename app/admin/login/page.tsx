@@ -22,7 +22,7 @@ export default function AdminLoginPage({
       <p className="mt-2 text-muted">Toegang tot het beheer van breinplek.nl.</p>
 
       {fout && (
-        <p className="mt-4 rounded-md border border-amber-dark/30 bg-amber-light px-4 py-3 text-sm text-amber-dark">
+        <p className="mt-4 rounded-md border border-amber-dark bg-amber-light px-4 py-3 text-sm text-amber-dark">
           Die combinatie klopt niet. Probeer het opnieuw.
         </p>
       )}

@@ -37,7 +37,7 @@ export default function HomePage() {
 
       {vraagVanDeDag && (
         <section className="mx-auto max-w-5xl px-5 pb-14">
-          <div className="rounded-xl border border-teal-dark/20 bg-teal-light p-6 sm:p-8">
+          <div className="rounded-xl border border-teal bg-teal-light p-6 sm:p-8">
             <p className="font-heading text-sm font-semibold uppercase tracking-wide text-teal-dark">
               Vraag van de dag
             </p>

@@ -1,22 +1,85 @@
 import Link from 'next/link';
-import { requireAdminOrRedirect } from '@/lib/adminAuth';
+import { requireAdminOrRedirect, onlineGebruikers, listUsers } from '@/lib/adminAuth';
 import { getAllArtikelen, getAllVragen } from '@/lib/content';
 import { deleteArtikelAction, deleteVraagAction } from '@/app/admin/actions';
-import { getCategory } from '@/lib/categories';
+import { getCategory, categories } from '@/lib/categories';
+import { dagtotalenLaatsteDagen, categorieVerdeling, totaalBezoeken } from '@/lib/analytics';
+import MiniLineChart from '@/components/admin/MiniLineChart';
+import CategoryDonut from '@/components/admin/CategoryDonut';
 
 export const metadata = { title: 'Overzicht' };
 
+const badgeKleur: Record<string, string> = {
+  teal: 'border-teal text-teal',
+  plum: 'border-plum text-plum',
+  amber: 'border-amber text-amber',
+};
+
+function StatBadge({ waarde, label, kleur = 'teal' }: { waarde: number | string; label: string; kleur?: string }) {
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <div
+        className={`flex h-16 w-16 items-center justify-center rounded-full border-2 font-heading text-lg font-semibold ${badgeKleur[kleur]}`}
+      >
+        {waarde}
+      </div>
+      <p className="text-center text-xs text-muted">{label}</p>
+    </div>
+  );
+}
+
 export default function AdminDashboardPage() {
-  requireAdminOrRedirect();
+  const gebruiker = requireAdminOrRedirect();
 
   const artikelen = getAllArtikelen();
   const vragen = getAllVragen();
+  const online = onlineGebruikers();
+  const dagtotalen = dagtotalenLaatsteDagen(14);
+  const bezoekenLaatste14 = dagtotalen.reduce((s, d) => s + d.aantal, 0);
+  const categorieData = categorieVerdeling();
 
   return (
     <div>
-      <h1 className="font-heading text-2xl font-semibold text-ink">Overzicht</h1>
+      <h1 className="font-heading text-2xl font-semibold text-ink">
+        Welkom terug, {gebruiker.username}
+      </h1>
+      <p className="mt-1 text-muted">
+        {artikelen.length} artikelen, {vragen.length} vragen live.
+      </p>
 
-      <section className="mt-10">
+      <section className="mt-8 flex flex-wrap gap-8 rounded-lg border border-line bg-surface p-6">
+        <StatBadge waarde={artikelen.length} label="Artikelen" kleur="teal" />
+        <StatBadge waarde={vragen.length} label="Vragen" kleur="plum" />
+        <StatBadge waarde={categories.length} label="Categorieën" kleur="amber" />
+        <StatBadge waarde={totaalBezoeken()} label="Bezoeken totaal" kleur="teal" />
+        {gebruiker.role === 'admin' && (
+          <StatBadge waarde={listUsers().length} label="Gebruikers" kleur="plum" />
+        )}
+        <StatBadge waarde={online.length} label="Online nu" kleur="amber" />
+      </section>
+
+      <section className="mt-8 grid gap-6 lg:grid-cols-3">
+        <div className="rounded-lg border border-line bg-surface p-6 lg:col-span-2">
+          <div className="flex items-baseline justify-between">
+            <h2 className="font-heading text-sm font-semibold text-ink">
+              Paginabezoeken — laatste 14 dagen
+            </h2>
+            <span className="text-sm text-muted">{bezoekenLaatste14} bezoeken</span>
+          </div>
+          <div className="mt-4">
+            <MiniLineChart data={dagtotalen.map((d) => ({ label: d.datum, waarde: d.aantal }))} />
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-line bg-surface p-6">
+          <h2 className="font-heading text-sm font-semibold text-ink">Bezoeken per categorie</h2>
+          <div className="mt-4">
+            <CategoryDonut segmenten={categorieData} />
+          </div>
+        </div>
+      </section>
+
+      <section className="mt-12">
         <div className="flex items-center justify-between">
           <h2 className="font-heading text-lg font-semibold text-ink">
             Artikelen ({artikelen.length})

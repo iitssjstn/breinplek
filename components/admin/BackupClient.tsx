@@ -71,12 +71,12 @@ export default function BackupClient() {
         />
         {bezig && <p className="mt-2 text-sm text-muted">Bezig met herstellen...</p>}
         {melding && (
-          <p className="mt-2 rounded-md border border-teal/30 bg-teal-light px-4 py-3 text-sm text-teal-dark">
+          <p className="mt-2 rounded-md border border-teal bg-teal-light px-4 py-3 text-sm text-teal-dark">
             {melding}
           </p>
         )}
         {fout && (
-          <p className="mt-2 rounded-md border border-amber-dark/30 bg-amber-light px-4 py-3 text-sm text-amber-dark">
+          <p className="mt-2 rounded-md border border-amber-dark bg-amber-light px-4 py-3 text-sm text-amber-dark">
             {fout}
           </p>
         )}

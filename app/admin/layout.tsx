@@ -13,10 +13,13 @@ export const metadata = {
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen flex-1 flex-col bg-bg md:flex-row">
+    // Het adminpaneel staat vast op donker thema, los van de licht/donker-
+    // schakelaar op de publieke site (die zet "dark" op <html>, dit zet het
+    // hier apart op deze wrapper, dus onafhankelijk van elkaar).
+    <div className="dark flex min-h-screen flex-1 flex-col bg-bg text-ink md:flex-row">
       <AdminSidebar />
       <main className="w-full flex-1 px-5 py-10 md:px-10">
-        <div className="mx-auto max-w-3xl">{children}</div>
+        <div className="mx-auto max-w-5xl">{children}</div>
       </main>
     </div>
   );

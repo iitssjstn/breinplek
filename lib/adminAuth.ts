@@ -199,6 +199,7 @@ export function requireAdminOrRedirect(): SessionUser {
   if (!user) {
     redirect('/admin/login');
   }
+  registreerActiviteit(user.username);
   return user;
 }
 
@@ -216,5 +217,38 @@ export function requireAdminRoleOrRedirect(): SessionUser {
 export function getSessionUser(): SessionUser | undefined {
   if (!isSetupComplete()) return undefined;
   const token = cookies().get(SESSION_COOKIE_NAME)?.value;
-  return readSessionCookieUser(token);
+  const user = readSessionCookieUser(token);
+  if (user) registreerActiviteit(user.username);
+  return user;
+}
+
+// --- "Online nu": laatst-actief-tijdstip per gebruiker, voor het dashboard ---
+
+const LAATST_ACTIEF_FILE = path.join(DATA_DIR, 'laatst-actief.json');
+const ONLINE_VENSTER_MS = 5 * 60 * 1000; // 5 minuten
+
+function registreerActiviteit(username: string) {
+  try {
+    const data: Record<string, string> = fs.existsSync(LAATST_ACTIEF_FILE)
+      ? JSON.parse(fs.readFileSync(LAATST_ACTIEF_FILE, 'utf8'))
+      : {};
+    data[username] = new Date().toISOString();
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+    fs.writeFileSync(LAATST_ACTIEF_FILE, JSON.stringify(data, null, 2));
+  } catch {
+    // Statistiek, mag nooit een paginabezoek breken.
+  }
+}
+
+export function onlineGebruikers(): string[] {
+  if (!fs.existsSync(LAATST_ACTIEF_FILE)) return [];
+  try {
+    const data: Record<string, string> = JSON.parse(fs.readFileSync(LAATST_ACTIEF_FILE, 'utf8'));
+    const grens = Date.now() - ONLINE_VENSTER_MS;
+    return Object.entries(data)
+      .filter(([, tijdstip]) => new Date(tijdstip).getTime() >= grens)
+      .map(([username]) => username);
+  } catch {
+    return [];
+  }
 }

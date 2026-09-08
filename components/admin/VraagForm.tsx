@@ -54,7 +54,7 @@ export default function VraagForm({ vraag }: { vraag?: VraagRuw }) {
   return (
     <div className="space-y-10">
       {!vraag && (
-        <section className="rounded-md border border-teal/30 bg-teal-light p-4">
+        <section className="rounded-md border border-teal bg-teal-light p-4">
           <h2 className="font-heading text-sm font-semibold text-teal-dark">
             Concept genereren met AI (optioneel)
           </h2>
