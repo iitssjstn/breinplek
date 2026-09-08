@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { getAllArtikelen, getArtikelBySlug } from '@/lib/content';
 import CategoryBadge from '@/components/CategoryBadge';
+import AdSlot from '@/components/AdSlot';
 
 export const revalidate = 60;
 
@@ -28,6 +29,7 @@ export default function ArtikelPage({ params }: { params: { slug: string } }) {
         className="article-body mt-8"
         dangerouslySetInnerHTML={{ __html: artikel.inhoudHtml }}
       />
+      <AdSlot slotId="artikel-onderaan" />
     </article>
   );
 }

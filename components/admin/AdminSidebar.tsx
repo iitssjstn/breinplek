@@ -11,8 +11,12 @@ export default function AdminSidebar() {
     { href: '/admin', label: 'Overzicht', exact: true },
     { href: '/admin/artikelen/nieuw', label: '+ Nieuw artikel' },
     { href: '/admin/vragen/nieuw', label: '+ Nieuwe vraag' },
+    { href: '/admin/statistieken', label: 'Statistieken' },
     ...(gebruiker.role === 'admin'
-      ? [{ href: '/admin/gebruikers', label: 'Gebruikers' }]
+      ? [
+          { href: '/admin/gebruikers', label: 'Gebruikers' },
+          { href: '/admin/backup', label: 'Backup' },
+        ]
       : []),
   ];
 
