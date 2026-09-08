@@ -16,13 +16,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ fout: 'Vul eerst een onderwerp in.' }, { status: 400 });
   }
 
-  const { concept, provider } = await genereerVraagConcept(onderwerp, categorieNaam);
+  const { concept, provider, foutdetail } = await genereerVraagConcept(onderwerp, categorieNaam);
   if (!concept) {
     return NextResponse.json(
-      {
-        fout:
-          'Geen AI-provider gaf een geldig antwoord. Controleer of er een API-sleutel is ingesteld (GEMINI_API_KEY, GROQ_API_KEY of OPENROUTER_API_KEY).',
-      },
+      { fout: foutdetail ? `Alle providers mislukten — ${foutdetail}` : 'Geen AI-provider gaf een geldig antwoord.' },
       { status: 502 }
     );
   }

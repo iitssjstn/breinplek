@@ -1,13 +1,17 @@
-// Genereert een concept-artikel of -vraag met een AI-tekstmodel. Net als
-// novapers proberen we meerdere providers, in volgorde, en gebruiken we de
-// eerste die een geldig antwoord geeft (Gemini -> Groq -> OpenRouter).
+// Genereert een concept-artikel of -vraag met een AI-tekstmodel. Zelfde
+// methode als novapers.nl: de officiële Google-SDK voor Gemini (niet een
+// losse fetch-aanroep — die liep vast op verouderde model/API-aannames),
+// een gedeelde OpenAI-compatibele aanroep voor Groq/OpenRouter, en een lange
+// (60s) timeout omdat gratis lagen van deze providers soms traag zijn —
+// een te korte timeout forceert onterecht een mislukte poging.
 //
-// API-sleutels komen uit environment-variabelen, of — als je liever geen
-// plaintext secrets in docker-compose zet — uit een bestand waarvan het pad
-// in <NAAM>_FILE staat (zelfde patroon als Docker secrets). Geen van de drie
-// is verplicht: providers zonder sleutel worden gewoon overgeslagen.
+// API-sleutels komen uit environment-variabelen, uit een bestand waarvan
+// het pad in <NAAM>_FILE staat (Docker-secrets-patroon), of uit
+// /admin/instellingen. Geen van de drie is verplicht: providers zonder
+// sleutel worden gewoon overgeslagen.
 
 import fs from 'fs';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { getSetting } from './settings';
 
 export interface ArtikelConcept {
@@ -35,6 +39,166 @@ function leesSleutel(naam: string): string | undefined {
   return getSetting(naam);
 }
 
+export function isAIConfigured(): boolean {
+  return Boolean(leesSleutel('GEMINI_API_KEY') || leesSleutel('GROQ_API_KEY') || leesSleutel('OPENROUTER_API_KEY'));
+}
+
+// --- Providers: zelfde twee bouwstenen als novapers.nl ---
+
+async function callGoogle({
+  apiKey,
+  model,
+  systemPrompt,
+  userPrompt,
+}: {
+  apiKey: string;
+  model: string;
+  systemPrompt: string;
+  userPrompt: string;
+}): Promise<string> {
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const genModel = genAI.getGenerativeModel({
+    model,
+    systemInstruction: systemPrompt,
+    generationConfig: {
+      responseMimeType: 'application/json',
+      maxOutputTokens: 4096,
+    },
+  });
+  const result = await genModel.generateContent(userPrompt);
+  return result.response.text();
+}
+
+// Groq en OpenRouter bieden allebei een OpenAI-compatibele
+// chat-completions-API aan, dus één generieke fetch-aanroep bedient beide.
+async function callOpenAICompatible({
+  baseUrl,
+  apiKey,
+  model,
+  systemPrompt,
+  userPrompt,
+  extraParams = {},
+}: {
+  baseUrl: string;
+  apiKey: string;
+  model: string;
+  systemPrompt: string;
+  userPrompt: string;
+  extraParams?: Record<string, unknown>;
+}): Promise<string> {
+  const res = await fetch(`${baseUrl}/chat/completions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+    body: JSON.stringify({
+      model,
+      max_tokens: 4096,
+      ...extraParams,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ],
+    }),
+  });
+
+  if (!res.ok) {
+    const bodyText = await res.text().catch(() => '');
+    throw new Error(`HTTP ${res.status} — ${bodyText.slice(0, 200)}`);
+  }
+
+  const data = await res.json();
+  const content = data.choices?.[0]?.message?.content;
+  if (!content) throw new Error('Geen tekst terugontvangen van de provider.');
+  return content;
+}
+
+interface Provider {
+  id: string;
+  label: string;
+  sleutelNaam: string;
+  call: (apiKey: string, systemPrompt: string, userPrompt: string) => Promise<string>;
+}
+
+// Zelfde providers en modellen als novapers.nl gebruikt (stand: 2026) — dit
+// zijn de op dit moment bevestigd werkende, niet-uitgefaseerde modellen.
+const PROVIDERS: Provider[] = [
+  {
+    id: 'gemini',
+    label: 'Gemini',
+    sleutelNaam: 'GEMINI_API_KEY',
+    call: (apiKey, systemPrompt, userPrompt) =>
+      callGoogle({ apiKey, model: 'gemini-3.5-flash', systemPrompt, userPrompt }),
+  },
+  {
+    id: 'groq',
+    label: 'Groq',
+    sleutelNaam: 'GROQ_API_KEY',
+    call: (apiKey, systemPrompt, userPrompt) =>
+      callOpenAICompatible({
+        baseUrl: 'https://api.groq.com/openai/v1',
+        apiKey,
+        model: 'openai/gpt-oss-120b',
+        systemPrompt,
+        userPrompt,
+        // Reasoning-model: zonder dit kan het z'n eigen redeneerstappen in
+        // het antwoord lekken, wat de JSON-parsing breekt.
+        extraParams: { reasoning_effort: 'low' },
+      }),
+  },
+  {
+    id: 'openrouter',
+    label: 'OpenRouter',
+    sleutelNaam: 'OPENROUTER_API_KEY',
+    call: (apiKey, systemPrompt, userPrompt) =>
+      callOpenAICompatible({
+        baseUrl: 'https://openrouter.ai/api/v1',
+        apiKey,
+        model: 'openrouter/free',
+        systemPrompt,
+        userPrompt,
+      }),
+  },
+];
+
+// 60s, niet 15s: een gratis-laag-respons van Gemini/Groq kan soms ruim
+// boven de 25s duren. Een te korte timeout forceert dan onterecht een
+// mislukte poging in plaats van gewoon even op het antwoord te wachten.
+const PROVIDER_TIMEOUT_MS = 60_000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`Timeout na ${ms / 1000}s`)), ms)
+    ),
+  ]);
+}
+
+async function callWithFallback(
+  systemPrompt: string,
+  userPrompt: string
+): Promise<{ rawText: string | null; providerLabel: string | null; poging: string[] }> {
+  const poging: string[] = [];
+
+  for (const provider of PROVIDERS) {
+    const apiKey = leesSleutel(provider.sleutelNaam);
+    if (!apiKey) continue;
+
+    try {
+      const rawText = await withTimeout(provider.call(apiKey, systemPrompt, userPrompt), PROVIDER_TIMEOUT_MS);
+      return { rawText, providerLabel: provider.label, poging };
+    } catch (err) {
+      const bericht = err instanceof Error ? err.message : String(err);
+      poging.push(`${provider.label}: ${bericht}`);
+      console.error(`[aiProviders] ${provider.label} mislukt:`, bericht);
+    }
+  }
+
+  if (poging.length === 0) {
+    poging.push('Geen enkele provider heeft een API-sleutel ingesteld.');
+  }
+  return { rawText: null, providerLabel: null, poging };
+}
+
 function parseJsonUitTekst<T>(ruw: string): T | null {
   const schoon = ruw
     .trim()
@@ -44,7 +208,6 @@ function parseJsonUitTekst<T>(ruw: string): T | null {
   try {
     return JSON.parse(schoon) as T;
   } catch {
-    // Soms zit de JSON tussen extra tekst; pak het eerste { ... } blok.
     const match = schoon.match(/\{[\s\S]*\}/);
     if (!match) return null;
     try {
@@ -55,138 +218,49 @@ function parseJsonUitTekst<T>(ruw: string): T | null {
   }
 }
 
-async function viaGemini(prompt: string): Promise<string | null> {
-  const key = leesSleutel('GEMINI_API_KEY');
-  if (!key) return null;
-  try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
-        signal: AbortSignal.timeout(15000),
-      }
-    );
-    if (!res.ok) {
-      console.error('[aiProviders] Gemini gaf een foutstatus:', res.status, await res.text().catch(() => ''));
-      return null;
-    }
-    const data = await res.json();
-    return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? null;
-  } catch (err) {
-    console.error('[aiProviders] Gemini onbereikbaar of timeout:', err instanceof Error ? err.message : err);
-    return null;
-  }
-}
-
-async function viaOpenAiCompatibel(
-  url: string,
-  sleutelNaam: string,
-  model: string,
-  prompt: string
-): Promise<string | null> {
-  const key = leesSleutel(sleutelNaam);
-  if (!key) return null;
-  try {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
-      body: JSON.stringify({
-        model,
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.7,
-      }),
-      signal: AbortSignal.timeout(15000),
-    });
-    if (!res.ok) {
-      console.error(
-        `[aiProviders] ${sleutelNaam} gaf een foutstatus:`,
-        res.status,
-        await res.text().catch(() => '')
-      );
-      return null;
-    }
-    const data = await res.json();
-    return data?.choices?.[0]?.message?.content ?? null;
-  } catch (err) {
-    console.error(
-      `[aiProviders] ${sleutelNaam}-provider onbereikbaar of timeout:`,
-      err instanceof Error ? err.message : err
-    );
-    return null;
-  }
-}
-
-async function genereerRuweTekst(prompt: string): Promise<{ tekst: string; provider: string } | null> {
-  const gemini = await viaGemini(prompt);
-  if (gemini) return { tekst: gemini, provider: 'Gemini' };
-
-  const groq = await viaOpenAiCompatibel(
-    'https://api.groq.com/openai/v1/chat/completions',
-    'GROQ_API_KEY',
-    'llama-3.1-8b-instant',
-    prompt
-  );
-  if (groq) return { tekst: groq, provider: 'Groq' };
-
-  const openrouter = await viaOpenAiCompatibel(
-    'https://openrouter.ai/api/v1/chat/completions',
-    'OPENROUTER_API_KEY',
-    'meta-llama/llama-3.1-8b-instruct:free',
-    prompt
-  );
-  if (openrouter) return { tekst: openrouter, provider: 'OpenRouter' };
-
-  return null;
-}
-
 const STIJLINSTRUCTIE = `Je schrijft voor breinplek.nl, een Nederlandse website met praktische tips over ADHD, autisme en AuDHD.
 Schrijfstijl: rustig, direct, geen medisch jargon, tweede persoon ("je"), concreet en toepasbaar, geen clichés, geen overdreven positiviteit.`;
 
 export async function genereerArtikelConcept(
   onderwerp: string,
   categorieNaam: string
-): Promise<{ concept: ArtikelConcept | null; provider: string | null }> {
-  const prompt = `${STIJLINSTRUCTIE}
+): Promise<{ concept: ArtikelConcept | null; provider: string | null; foutdetail?: string }> {
+  const systemPrompt = `${STIJLINSTRUCTIE}
 
-Schrijf een artikel over: "${onderwerp}" (categorie: ${categorieNaam}).
-Geef ALLEEN geldige JSON terug, zonder aanhalingstekens eromheen en zonder markdown-codeblok, exact in dit formaat:
+Geef ALLEEN geldige JSON terug, zonder markdown-codeblok eromheen, exact in dit formaat:
 {"titel": "...", "samenvatting": "één zin, max 20 woorden, voor op een kaartje", "inhoud": "de volledige artikeltekst in Markdown met ## voor tussenkopjes, 300 tot 500 woorden"}`;
+  const userPrompt = `Schrijf een artikel over: "${onderwerp}" (categorie: ${categorieNaam}).`;
 
-  const resultaat = await genereerRuweTekst(prompt);
-  if (!resultaat) return { concept: null, provider: null };
-
-  const concept = parseJsonUitTekst<ArtikelConcept>(resultaat.tekst);
-  if (!concept?.titel || !concept?.samenvatting || !concept?.inhoud) {
-    return { concept: null, provider: resultaat.provider };
+  const resultaat = await callWithFallback(systemPrompt, userPrompt);
+  if (!resultaat.rawText) {
+    return { concept: null, provider: null, foutdetail: resultaat.poging.join(' | ') };
   }
-  return { concept, provider: resultaat.provider };
+
+  const concept = parseJsonUitTekst<ArtikelConcept>(resultaat.rawText);
+  if (!concept?.titel || !concept?.samenvatting || !concept?.inhoud) {
+    return { concept: null, provider: resultaat.providerLabel, foutdetail: 'Antwoord kon niet als JSON worden gelezen.' };
+  }
+  return { concept, provider: resultaat.providerLabel };
 }
 
 export async function genereerVraagConcept(
   onderwerp: string,
   categorieNaam: string
-): Promise<{ concept: VraagConcept | null; provider: string | null }> {
-  const prompt = `${STIJLINSTRUCTIE}
+): Promise<{ concept: VraagConcept | null; provider: string | null; foutdetail?: string }> {
+  const systemPrompt = `${STIJLINSTRUCTIE}
 
-Schrijf een vraag-en-antwoord over: "${onderwerp}" (categorie: ${categorieNaam}).
 Geef ALLEEN geldige JSON terug, zonder markdown-codeblok, exact in dit formaat:
 {"vraag": "de vraag zoals een bezoeker die zou stellen", "antwoordKort": "1-2 zinnen, het korte antwoord voor op de homepage", "antwoord": "het volledige antwoord in Markdown, 150 tot 350 woorden"}`;
+  const userPrompt = `Schrijf een vraag-en-antwoord over: "${onderwerp}" (categorie: ${categorieNaam}).`;
 
-  const resultaat = await genereerRuweTekst(prompt);
-  if (!resultaat) return { concept: null, provider: null };
-
-  const concept = parseJsonUitTekst<VraagConcept>(resultaat.tekst);
-  if (!concept?.vraag || !concept?.antwoordKort || !concept?.antwoord) {
-    return { concept: null, provider: resultaat.provider };
+  const resultaat = await callWithFallback(systemPrompt, userPrompt);
+  if (!resultaat.rawText) {
+    return { concept: null, provider: null, foutdetail: resultaat.poging.join(' | ') };
   }
-  return { concept, provider: resultaat.provider };
-}
 
-// Server-side check of er überhaupt een provider is ingesteld — gebruikt om
-// de "Genereer concept met AI"-sectie in het formulier te verbergen zolang
-// er geen enkele sleutel is ingesteld. Voorkomt een knop die toch niks doet.
-export function isAIConfigured(): boolean {
-  return Boolean(leesSleutel('GEMINI_API_KEY') || leesSleutel('GROQ_API_KEY') || leesSleutel('OPENROUTER_API_KEY'));
+  const concept = parseJsonUitTekst<VraagConcept>(resultaat.rawText);
+  if (!concept?.vraag || !concept?.antwoordKort || !concept?.antwoord) {
+    return { concept: null, provider: resultaat.providerLabel, foutdetail: 'Antwoord kon niet als JSON worden gelezen.' };
+  }
+  return { concept, provider: resultaat.providerLabel };
 }

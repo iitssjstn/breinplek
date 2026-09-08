@@ -40,7 +40,7 @@ export default function VraagForm({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ onderwerp, categorieNaam }),
-        signal: AbortSignal.timeout(50000),
+        signal: AbortSignal.timeout(190000),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -54,7 +54,7 @@ export default function VraagForm({
     } catch (err) {
       setGenFout(
         err instanceof Error && err.name === 'TimeoutError'
-          ? 'De AI-provider reageerde niet binnen 50 seconden. Probeer het nog eens.'
+          ? 'De AI-provider reageerde niet binnen 3 minuten. Probeer het nog eens.'
           : 'Kon geen verbinding maken met de AI-provider.'
       );
     } finally {
