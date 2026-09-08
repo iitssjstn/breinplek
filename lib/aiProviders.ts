@@ -199,6 +199,12 @@ async function callWithFallback(
   return { rawText: null, providerLabel: null, poging };
 }
 
+// Vangnet: het model volgt "geen emoji's" meestal, maar niet altijd. Haalt
+// ze er hier hoe dan ook uit i.p.v. te vertrouwen op de instructie alleen.
+function verwijderEmojis(tekst: string): string {
+  return tekst.replace(/[\p{Extended_Pictographic}\u200d\ufe0f]/gu, '').replace(/[ \t]{2,}/g, ' ');
+}
+
 function parseJsonUitTekst<T>(ruw: string): T | null {
   const schoon = ruw
     .trim()
@@ -219,7 +225,8 @@ function parseJsonUitTekst<T>(ruw: string): T | null {
 }
 
 const STIJLINSTRUCTIE = `Je schrijft voor breinplek.nl, een Nederlandse website met praktische tips over ADHD, autisme en AuDHD.
-Schrijfstijl: rustig, direct, geen medisch jargon, tweede persoon ("je"), concreet en toepasbaar, geen clichés, geen overdreven positiviteit.`;
+Schrijfstijl: rustig, direct, geen medisch jargon, tweede persoon ("je"), concreet en toepasbaar, geen clichés, geen overdreven positiviteit.
+Gebruik GEEN emoji's, ook niet als pictogram of opsommingsteken — puur platte tekst en Markdown (## voor koppen, - voor lijstjes).`;
 
 export async function genereerArtikelConcept(
   onderwerp: string,
@@ -240,7 +247,14 @@ Geef ALLEEN geldige JSON terug, zonder markdown-codeblok eromheen, exact in dit 
   if (!concept?.titel || !concept?.samenvatting || !concept?.inhoud) {
     return { concept: null, provider: resultaat.providerLabel, foutdetail: 'Antwoord kon niet als JSON worden gelezen.' };
   }
-  return { concept, provider: resultaat.providerLabel };
+  return {
+    concept: {
+      titel: verwijderEmojis(concept.titel),
+      samenvatting: verwijderEmojis(concept.samenvatting),
+      inhoud: verwijderEmojis(concept.inhoud),
+    },
+    provider: resultaat.providerLabel,
+  };
 }
 
 export async function genereerVraagConcept(
@@ -262,5 +276,12 @@ Geef ALLEEN geldige JSON terug, zonder markdown-codeblok, exact in dit formaat:
   if (!concept?.vraag || !concept?.antwoordKort || !concept?.antwoord) {
     return { concept: null, provider: resultaat.providerLabel, foutdetail: 'Antwoord kon niet als JSON worden gelezen.' };
   }
-  return { concept, provider: resultaat.providerLabel };
+  return {
+    concept: {
+      vraag: verwijderEmojis(concept.vraag),
+      antwoordKort: verwijderEmojis(concept.antwoordKort),
+      antwoord: verwijderEmojis(concept.antwoord),
+    },
+    provider: resultaat.providerLabel,
+  };
 }
