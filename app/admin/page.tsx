@@ -4,9 +4,10 @@ import { getAllArtikelen, getAllVragen } from '@/lib/content';
 import { deleteArtikelAction, deleteVraagAction } from '@/app/admin/actions';
 import { getCategory, categories } from '@/lib/categories';
 import { dagtotalenLaatsteDagen, categorieVerdeling, totaalBezoeken } from '@/lib/analytics';
-import { getActiefBezoekersAantal, getActievePaginas } from '@/lib/visitor-tracking';
+import { getActiefBezoekersAantal } from '@/lib/visitor-tracking';
 import MiniLineChart from '@/components/admin/MiniLineChart';
 import CategoryDonut from '@/components/admin/CategoryDonut';
+import LiveBezoekersBadge from '@/components/admin/LiveBezoekersBadge';
 
 export const metadata = { title: 'Overzicht' };
 
@@ -38,7 +39,6 @@ export default function AdminDashboardPage() {
   const bezoekenLaatste14 = dagtotalen.reduce((s, d) => s + d.aantal, 0);
   const categorieData = categorieVerdeling();
   const actieveBezoekersAantal = getActiefBezoekersAantal();
-  const actievePaginas = getActievePaginas();
 
   return (
     <div>
@@ -57,24 +57,8 @@ export default function AdminDashboardPage() {
         {gebruiker.role === 'admin' && (
           <StatBadge waarde={listUsers().length} label="Gebruikers" kleur="plum" />
         )}
-        <StatBadge waarde={actieveBezoekersAantal} label="Online nu (site)" kleur="amber" />
+        <LiveBezoekersBadge initieelAantal={actieveBezoekersAantal} />
       </section>
-
-      {actievePaginas.length > 0 && (
-        <section className="mt-6 rounded-lg border border-line bg-surface p-6">
-          <h2 className="font-heading text-sm font-semibold text-ink">Nu actief op de site</h2>
-          <ul className="mt-3 space-y-1.5 text-sm">
-            {actievePaginas.map((p) => (
-              <li key={p.pad} className="flex items-center justify-between gap-4">
-                <span className="text-ink">{p.pad}</span>
-                <span className="shrink-0 text-xs text-muted">
-                  {p.aantal} {p.aantal === 1 ? 'bezoeker' : 'bezoekers'}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
 
       <section className="mt-8 grid gap-6 lg:grid-cols-3">
         <div className="rounded-lg border border-line bg-surface p-6 lg:col-span-2">

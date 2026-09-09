@@ -10,7 +10,7 @@ export async function POST(request: Request) {
     // bezoeker" — anders lopen "bezoeken" en "nu actief" niet synchroon.
     if (!getSessionUser() && !isBotUserAgent(request.headers.get('user-agent'))) {
       const body = await request.json();
-      registreerHeartbeat(body?.visitorId, body?.pad);
+      registreerHeartbeat(body?.visitorId);
     }
   } catch {
     // Een kapotte/ontbrekende body mag de pagina van de bezoeker niet breken.

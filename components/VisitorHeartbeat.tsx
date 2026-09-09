@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect } from 'react';
-import { usePathname } from 'next/navigation';
 
 const HEARTBEAT_INTERVAL_MS = 15 * 1000;
 
@@ -17,9 +16,9 @@ function getOfMaakBezoekerId(): string {
   return id;
 }
 
+// Stuurt alleen een "ik ben er nog"-signaal, geen paginapad -- er wordt
+// bewust niet bijgehouden óp welke pagina een bezoeker zit.
 export default function VisitorHeartbeat() {
-  const pathname = usePathname();
-
   useEffect(() => {
     const visitorId = getOfMaakBezoekerId();
 
@@ -27,7 +26,7 @@ export default function VisitorHeartbeat() {
       fetch('/api/track-visitor', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ visitorId, pad: pathname }),
+        body: JSON.stringify({ visitorId }),
       }).catch(() => {
         // Een gemiste heartbeat mag de pagina van de bezoeker niet breken.
       });
@@ -36,7 +35,7 @@ export default function VisitorHeartbeat() {
     stuurHeartbeat();
     const interval = setInterval(stuurHeartbeat, HEARTBEAT_INTERVAL_MS);
     return () => clearInterval(interval);
-  }, [pathname]);
+  }, []);
 
   return null;
 }

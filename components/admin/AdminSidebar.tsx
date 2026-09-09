@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { getSessionUser, onlineGebruikers } from '@/lib/adminAuth';
 import { logoutAction } from '@/app/admin/actions';
 import AdminSidebarLinks from './AdminSidebarLinks';
+import LiveTeamledenActief from './LiveTeamledenActief';
 import {
   IconOverzicht,
   IconArtikel,
@@ -59,19 +60,7 @@ export default function AdminSidebar() {
         )}
       </nav>
 
-      {online.length > 0 && (
-        <div className="border-t border-line px-4 py-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted">Online nu</p>
-          <ul className="mt-2 space-y-1">
-            {online.map((naam) => (
-              <li key={naam} className="flex items-center gap-2 text-sm text-ink">
-                <span className="h-1.5 w-1.5 rounded-full bg-teal" />
-                {naam}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      <LiveTeamledenActief initieel={online} />
 
       <div className="border-t border-line px-2 py-2">
         <Link
