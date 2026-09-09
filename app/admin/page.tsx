@@ -33,7 +33,7 @@ export default function AdminDashboardPage() {
 
   const artikelen = getAllArtikelen();
   const vragen = getAllVragen();
-  const online = onlineGebruikers();
+  const online = onlineGebruikers().filter((naam) => naam.toLowerCase() !== gebruiker.username.toLowerCase());
   const dagtotalen = dagtotalenLaatsteDagen(14);
   const bezoekenLaatste14 = dagtotalen.reduce((s, d) => s + d.aantal, 0);
   const categorieData = categorieVerdeling();

@@ -17,7 +17,7 @@ export default function AdminSidebar() {
   const gebruiker = getSessionUser();
   if (!gebruiker) return null;
 
-  const online = onlineGebruikers();
+  const online = onlineGebruikers().filter((naam) => naam.toLowerCase() !== gebruiker.username.toLowerCase());
 
   const contentItems = [
     { href: '/admin', label: 'Overzicht', icon: <IconOverzicht />, exact: true },
