@@ -41,8 +41,8 @@ export default function ThemeToggle() {
             zichtbaar, in plaats van een kleur die met het thema meewisselt
             en op de track kan wegvallen. */}
         <span
-          className={`absolute top-0.5 h-3 w-3 rounded-full bg-white shadow transition-transform ${
-            donker ? 'translate-x-4' : 'translate-x-0.5'
+          className={`absolute left-0.5 top-0.5 h-3 w-3 rounded-full bg-white shadow transition-transform ${
+            donker ? 'translate-x-4' : 'translate-x-0'
           }`}
         />
       </span>
