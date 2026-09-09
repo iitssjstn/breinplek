@@ -15,7 +15,7 @@ import {
   SESSION_COOKIE_NAME,
   type Role,
 } from '@/lib/adminAuth';
-import { writeArtikel, deleteArtikelFile, writeVraag, deleteVraagFile } from '@/lib/content';
+import { writeArtikel, deleteArtikelFile, writeVraag, deleteVraagFile, zetOverigeVragenNietUitgelicht } from '@/lib/content';
 import { slugify } from '@/lib/slugify';
 import { setSetting } from '@/lib/settings';
 
@@ -163,15 +163,17 @@ export async function saveVraagAction(formData: FormData) {
   const antwoordKort = String(formData.get('antwoordKort') ?? '').trim();
   const antwoord = String(formData.get('antwoord') ?? '');
   const bestaandeAuteur = (String(formData.get('auteur') ?? '') || undefined) as string | undefined;
+  const uitgelicht = formData.get('uitgelicht') === 'on';
 
   const slug = oldSlug ?? slugify(vraag);
 
   writeVraag(
     slug,
-    { vraag, categorie, antwoordKort, auteur: bestaandeAuteur ?? gebruiker.username },
+    { vraag, categorie, antwoordKort, auteur: bestaandeAuteur ?? gebruiker.username, uitgelicht },
     antwoord,
     oldSlug
   );
+  if (uitgelicht) zetOverigeVragenNietUitgelicht(slug);
 
   revalidatePath('/', 'layout');
   redirect('/admin');

@@ -17,7 +17,7 @@ export default function ArtikelForm({
   aiBeschikbaar?: boolean;
 }) {
   const [onderwerp, setOnderwerp] = useState('');
-  const [genCategorie, setGenCategorie] = useState<CategorySlug>(artikel?.categorie ?? categories[0].slug);
+  const [categorie, setCategorie] = useState<CategorySlug>(artikel?.categorie ?? categories[0].slug);
   const [bezigMetGenereren, setBezigMetGenereren] = useState(false);
   const [genFout, setGenFout] = useState<string | null>(null);
   const [genProvider, setGenProvider] = useState<string | null>(null);
@@ -35,7 +35,7 @@ export default function ArtikelForm({
     setGenFout(null);
     setGenProvider(null);
     try {
-      const categorieNaam = categories.find((c) => c.slug === genCategorie)?.naam ?? genCategorie;
+      const categorieNaam = categories.find((c) => c.slug === categorie)?.naam ?? categorie;
       const res = await fetch('/api/admin/genereer-artikel', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -81,8 +81,8 @@ export default function ArtikelForm({
               className="flex-1 rounded-md border border-line bg-bg px-3 py-2 text-sm text-ink focus-visible:outline-teal"
             />
             <select
-              value={genCategorie}
-              onChange={(e) => setGenCategorie(e.target.value as CategorySlug)}
+              value={categorie}
+              onChange={(e) => setCategorie(e.target.value as CategorySlug)}
               className="rounded-md border border-line bg-bg px-3 py-2 text-sm text-ink focus-visible:outline-teal"
             >
               {categories.map((c) => (
@@ -152,7 +152,8 @@ export default function ArtikelForm({
             <select
               id="categorie"
               name="categorie"
-              defaultValue={artikel?.categorie ?? categories[0].slug}
+              value={categorie}
+              onChange={(e) => setCategorie(e.target.value as CategorySlug)}
               className={inputClass}
             >
               {categories.map((c) => (

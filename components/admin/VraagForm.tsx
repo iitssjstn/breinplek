@@ -17,7 +17,7 @@ export default function VraagForm({
   aiBeschikbaar?: boolean;
 }) {
   const [onderwerp, setOnderwerp] = useState('');
-  const [genCategorie, setGenCategorie] = useState<CategorySlug>(vraag?.categorie ?? categories[0].slug);
+  const [categorie, setCategorie] = useState<CategorySlug>(vraag?.categorie ?? categories[0].slug);
   const [bezigMetGenereren, setBezigMetGenereren] = useState(false);
   const [genFout, setGenFout] = useState<string | null>(null);
   const [genProvider, setGenProvider] = useState<string | null>(null);
@@ -35,7 +35,7 @@ export default function VraagForm({
     setGenFout(null);
     setGenProvider(null);
     try {
-      const categorieNaam = categories.find((c) => c.slug === genCategorie)?.naam ?? genCategorie;
+      const categorieNaam = categories.find((c) => c.slug === categorie)?.naam ?? categorie;
       const res = await fetch('/api/admin/genereer-vraag', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -81,8 +81,8 @@ export default function VraagForm({
               className="flex-1 rounded-md border border-line bg-bg px-3 py-2 text-sm text-ink focus-visible:outline-teal"
             />
             <select
-              value={genCategorie}
-              onChange={(e) => setGenCategorie(e.target.value as CategorySlug)}
+              value={categorie}
+              onChange={(e) => setCategorie(e.target.value as CategorySlug)}
               className="rounded-md border border-line bg-bg px-3 py-2 text-sm text-ink focus-visible:outline-teal"
             >
               {categories.map((c) => (
@@ -136,7 +136,8 @@ export default function VraagForm({
           <select
             id="categorie"
             name="categorie"
-            defaultValue={vraag?.categorie ?? categories[0].slug}
+            value={categorie}
+              onChange={(e) => setCategorie(e.target.value as CategorySlug)}
             className={inputClass}
           >
             {categories.map((c) => (
@@ -175,6 +176,23 @@ export default function VraagForm({
             onChange={(e) => setAntwoord(e.target.value)}
             className={`${inputClass} font-mono text-sm`}
           />
+        </div>
+
+        <div>
+          <label className="flex items-center gap-2 text-sm font-medium text-ink">
+            <input
+              type="checkbox"
+              name="uitgelicht"
+              defaultChecked={vraag?.uitgelicht}
+              className="h-4 w-4 rounded border-line accent-teal"
+            />
+            Toon als &quot;vraag van de dag&quot; op de homepage
+          </label>
+          <p className="mt-1 text-xs text-muted">
+            Overschrijft de automatische, datum-gebaseerde keuze. Er kan maar één vraag
+            tegelijk vastgezet zijn — activeer je deze, dan wordt die van een eventuele
+            andere vraag automatisch uitgezet.
+          </p>
         </div>
 
         <button

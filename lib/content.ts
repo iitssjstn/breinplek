@@ -25,6 +25,7 @@ export interface Vraag {
   vraag: string;
   categorie: CategorySlug;
   auteur?: string;
+  uitgelicht?: boolean;
   antwoordKortHtml: string;
   antwoordHtml: string;
 }
@@ -79,6 +80,7 @@ export function getAllVragen(): Vraag[] {
       vraag: data.vraag as string,
       categorie: data.categorie as CategorySlug,
       auteur: (data.auteur as string) || undefined,
+      uitgelicht: Boolean(data.uitgelicht),
       antwoordKortHtml: kortHtml,
       antwoordHtml: html,
     };
@@ -111,6 +113,7 @@ export interface VraagRuw {
   vraag: string;
   categorie: CategorySlug;
   auteur?: string;
+  uitgelicht?: boolean;
   antwoordKortMarkdown: string;
   antwoordMarkdown: string;
 }
@@ -141,6 +144,7 @@ export function getVraagRawBySlug(slug: string): VraagRuw | undefined {
     vraag: (data.vraag as string) ?? '',
     categorie: data.categorie as CategorySlug,
     auteur: (data.auteur as string) || undefined,
+    uitgelicht: Boolean(data.uitgelicht),
     antwoordKortMarkdown: ((data.antwoordKort as string) ?? '').trim(),
     antwoordMarkdown: content.trim(),
   };
@@ -168,7 +172,7 @@ export function deleteArtikelFile(slug: string) {
 
 export function writeVraag(
   slug: string,
-  data: { vraag: string; categorie: string; antwoordKort: string; auteur?: string },
+  data: { vraag: string; categorie: string; antwoordKort: string; auteur?: string; uitgelicht?: boolean },
   antwoordMarkdown: string,
   oldSlug?: string
 ) {
@@ -184,4 +188,19 @@ export function writeVraag(
 export function deleteVraagFile(slug: string) {
   const file = path.join(VRAGEN_DIR, `${slug}.md`);
   if (fs.existsSync(file)) fs.unlinkSync(file);
+}
+
+// Zorgt dat er maar één vraag tegelijk als "vraag van de dag" is vastgezet:
+// haalt het vlag bij alle andere vragen weg.
+export function zetOverigeVragenNietUitgelicht(behalveSlug: string) {
+  for (const v of getAllVragen()) {
+    if (v.slug === behalveSlug || !v.uitgelicht) continue;
+    const raw = getVraagRawBySlug(v.slug);
+    if (!raw) continue;
+    writeVraag(
+      v.slug,
+      { vraag: raw.vraag, categorie: raw.categorie, antwoordKort: raw.antwoordKortMarkdown, auteur: raw.auteur, uitgelicht: false },
+      raw.antwoordMarkdown
+    );
+  }
 }

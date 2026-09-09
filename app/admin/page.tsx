@@ -153,6 +153,7 @@ export default function AdminDashboardPage() {
                 <p className="text-xs text-muted">
                   {getCategory(v.categorie)?.naam ?? v.categorie}
                   {v.auteur && <> &middot; door {v.auteur}</>}
+                  {v.uitgelicht && <> &middot; <span className="text-teal-dark">vraag van de dag</span></>}
                 </p>
               </div>
               <div className="flex shrink-0 items-center gap-4 text-sm">

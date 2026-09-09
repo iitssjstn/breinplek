@@ -16,7 +16,8 @@ function kiesVraagVanDeDag(aantal: number) {
 export default function HomePage() {
   const artikelen = getAllArtikelen().slice(0, 6);
   const vragen = getAllVragen();
-  const vraagVanDeDag = vragen.length > 0 ? vragen[kiesVraagVanDeDag(vragen.length)] : undefined;
+  const vastgezet = vragen.find((v) => v.uitgelicht);
+  const vraagVanDeDag = vastgezet ?? (vragen.length > 0 ? vragen[kiesVraagVanDeDag(vragen.length)] : undefined);
 
   return (
     <>
