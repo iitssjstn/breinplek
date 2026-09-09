@@ -69,6 +69,11 @@ export function registreerPageview(pad: string) {
   writeData(data);
 }
 
+// "Nu actief op de site" wordt niet hier bijgehouden (bestandsgebaseerd),
+// maar in lib/visitor-tracking.ts — in-memory, zelfde aanpak als
+// novapers.nl. Dat is bewust lichter: bij veel gelijktijdige bezoekers zou
+// elke heartbeat wegschrijven naar dit bestand onnodig zwaar zijn.
+
 export function topPaginas(limiet = 20): Array<{ pad: string; aantal: number; laatstBezocht: string }> {
   const data = readData();
   return Object.entries(data.paginas)
