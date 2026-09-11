@@ -65,7 +65,7 @@ export default function InstellingenPage({
         </p>
       )}
 
-      <form action={saveInstellingenAction} className="mt-6 flex flex-col gap-5">
+      <form action={saveInstellingenAction} className="mt-6 flex flex-col gap-5" autoComplete="off">
         {VELDEN.map((veld) => (
           <div key={veld.naam} className="flex flex-col gap-1.5">
             <label htmlFor={veld.naam} className="text-sm font-medium text-ink">
@@ -75,6 +75,10 @@ export default function InstellingenPage({
               id={veld.naam}
               type={veld.isWachtwoordveld ? 'password' : 'text'}
               name={veld.naam}
+              autoComplete="new-password"
+              data-1p-ignore
+              data-lpignore="true"
+              data-bwignore
               placeholder={isSettingSet(veld.naam) ? '•••••••• (ingesteld — laat leeg om ongewijzigd te laten)' : ''}
               className="rounded-md border border-line bg-bg px-3 py-2 text-sm text-ink focus-visible:outline-teal"
             />
