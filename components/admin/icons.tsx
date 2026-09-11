@@ -78,6 +78,16 @@ export function IconInstellingen() {
   );
 }
 
+export function IconWachtrij() {
+  return (
+    <svg {...gedeeld}>
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <path d="M3 9h18" />
+      <path d="M8 13h8M8 16h5" />
+    </svg>
+  );
+}
+
 export function IconBekijkSite() {
   return (
     <svg {...gedeeld}>

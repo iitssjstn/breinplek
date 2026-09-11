@@ -9,22 +9,35 @@ import { saveVraagAction, deleteVraagAction } from '@/app/admin/actions';
 const inputClass =
   'mt-1 w-full rounded-md border border-line bg-bg px-3 py-2 text-ink focus-visible:outline-teal';
 
+interface WachtrijConcept {
+  vraag: string;
+  antwoordKort: string;
+  antwoord: string;
+  categorie: CategorySlug;
+}
+
 export default function VraagForm({
   vraag,
   aiBeschikbaar = false,
+  wachtrijConcept,
+  wachtrijId,
 }: {
   vraag?: VraagRuw;
   aiBeschikbaar?: boolean;
+  wachtrijConcept?: WachtrijConcept;
+  wachtrijId?: string;
 }) {
   const [onderwerp, setOnderwerp] = useState('');
-  const [categorie, setCategorie] = useState<CategorySlug>(vraag?.categorie ?? categories[0].slug);
+  const [categorie, setCategorie] = useState<CategorySlug>(
+    vraag?.categorie ?? wachtrijConcept?.categorie ?? categories[0].slug
+  );
   const [bezigMetGenereren, setBezigMetGenereren] = useState(false);
   const [genFout, setGenFout] = useState<string | null>(null);
   const [genProvider, setGenProvider] = useState<string | null>(null);
 
-  const [vraagTekst, setVraagTekst] = useState(vraag?.vraag ?? '');
-  const [antwoordKort, setAntwoordKort] = useState(vraag?.antwoordKortMarkdown ?? '');
-  const [antwoord, setAntwoord] = useState(vraag?.antwoordMarkdown ?? '');
+  const [vraagTekst, setVraagTekst] = useState(vraag?.vraag ?? wachtrijConcept?.vraag ?? '');
+  const [antwoordKort, setAntwoordKort] = useState(vraag?.antwoordKortMarkdown ?? wachtrijConcept?.antwoordKort ?? '');
+  const [antwoord, setAntwoord] = useState(vraag?.antwoordMarkdown ?? wachtrijConcept?.antwoord ?? '');
 
   async function genereerConcept() {
     if (!onderwerp.trim()) {
@@ -64,7 +77,7 @@ export default function VraagForm({
 
   return (
     <div className="space-y-10">
-      {!vraag && aiBeschikbaar && (
+      {!vraag && !wachtrijConcept && aiBeschikbaar && (
         <section className="rounded-md border border-teal bg-teal-light p-4">
           <h2 className="font-heading text-sm font-semibold text-teal-dark">
             Concept genereren met AI (optioneel)
@@ -109,6 +122,7 @@ export default function VraagForm({
 
       <form action={saveVraagAction} className="space-y-5">
         {vraag && <input type="hidden" name="oldSlug" value={vraag.slug} />}
+        {wachtrijId && <input type="hidden" name="wachtrijId" value={wachtrijId} />}
         {vraag?.auteur && <input type="hidden" name="auteur" value={vraag.auteur} />}
 
         {vraag?.auteur && (

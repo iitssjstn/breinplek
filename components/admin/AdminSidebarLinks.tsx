@@ -8,6 +8,7 @@ interface NavItem {
   label: string;
   icon: React.ReactNode;
   exact?: boolean;
+  badge?: number;
 }
 
 export default function AdminSidebarLinks({ items }: { items: NavItem[] }) {
@@ -27,6 +28,11 @@ export default function AdminSidebarLinks({ items }: { items: NavItem[] }) {
           >
             <span className="shrink-0 opacity-80">{item.icon}</span>
             {item.label}
+            {Boolean(item.badge) && (
+              <span className="ml-auto rounded-full bg-amber px-1.5 py-0.5 text-xs font-semibold text-white">
+                {item.badge}
+              </span>
+            )}
           </Link>
         );
       })}

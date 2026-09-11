@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { getSessionUser, onlineGebruikers } from '@/lib/adminAuth';
+import { getWachtrij } from '@/lib/wachtrij';
 import { logoutAction } from '@/app/admin/actions';
 import AdminSidebarLinks from './AdminSidebarLinks';
 import LiveTeamledenActief from './LiveTeamledenActief';
@@ -8,6 +9,7 @@ import {
   IconArtikel,
   IconVraag,
   IconStatistieken,
+  IconWachtrij,
   IconGebruikers,
   IconBackup,
   IconInstellingen,
@@ -19,11 +21,13 @@ export default function AdminSidebar() {
   if (!gebruiker) return null;
 
   const online = onlineGebruikers().filter((naam) => naam.toLowerCase() !== gebruiker.username.toLowerCase());
+  const wachtrijAantal = getWachtrij().length;
 
   const contentItems = [
     { href: '/admin', label: 'Overzicht', icon: <IconOverzicht />, exact: true },
     { href: '/admin/artikelen/nieuw', label: 'Nieuw artikel', icon: <IconArtikel /> },
     { href: '/admin/vragen/nieuw', label: 'Nieuwe vraag', icon: <IconVraag /> },
+    { href: '/admin/wachtrij', label: 'Wachtrij', icon: <IconWachtrij />, badge: wachtrijAantal },
     { href: '/admin/statistieken', label: 'Statistieken', icon: <IconStatistieken /> },
   ];
 

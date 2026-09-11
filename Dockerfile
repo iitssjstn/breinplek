@@ -31,6 +31,12 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # and edited without rebuilding the image.
 COPY --from=builder --chown=nextjs:nodejs /app/content ./content
 
+# Losstaand achtergrondscript voor de dagelijkse conceptgenerator — bewust
+# niet meegebundeld door Next.js (zie docker-entrypoint.sh voor waarom).
+COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
+COPY --chown=nextjs:nodejs docker-entrypoint.sh ./docker-entrypoint.sh
+RUN chmod +x ./docker-entrypoint.sh
+
 # Writable data dir for the one-time admin setup (password hash + session
 # secret). Created here so it exists (and is owned by nextjs) even before a
 # volume is mounted over it.
@@ -39,4 +45,4 @@ RUN mkdir -p /app/data && chown nextjs:nodejs /app/data
 USER nextjs
 EXPOSE 3000
 
-CMD ["node", "server.js"]
+ENTRYPOINT ["./docker-entrypoint.sh"]

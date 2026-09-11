@@ -9,22 +9,35 @@ import { saveArtikelAction, deleteArtikelAction } from '@/app/admin/actions';
 const inputClass =
   'mt-1 w-full rounded-md border border-line bg-bg px-3 py-2 text-ink focus-visible:outline-teal';
 
+interface WachtrijConcept {
+  titel: string;
+  samenvatting: string;
+  categorie: CategorySlug;
+  inhoud: string;
+}
+
 export default function ArtikelForm({
   artikel,
   aiBeschikbaar = false,
+  wachtrijConcept,
+  wachtrijId,
 }: {
   artikel?: ArtikelRuw;
   aiBeschikbaar?: boolean;
+  wachtrijConcept?: WachtrijConcept;
+  wachtrijId?: string;
 }) {
   const [onderwerp, setOnderwerp] = useState('');
-  const [categorie, setCategorie] = useState<CategorySlug>(artikel?.categorie ?? categories[0].slug);
+  const [categorie, setCategorie] = useState<CategorySlug>(
+    artikel?.categorie ?? wachtrijConcept?.categorie ?? categories[0].slug
+  );
   const [bezigMetGenereren, setBezigMetGenereren] = useState(false);
   const [genFout, setGenFout] = useState<string | null>(null);
   const [genProvider, setGenProvider] = useState<string | null>(null);
 
-  const [titel, setTitel] = useState(artikel?.titel ?? '');
-  const [samenvatting, setSamenvatting] = useState(artikel?.samenvatting ?? '');
-  const [inhoud, setInhoud] = useState(artikel?.inhoudMarkdown ?? '');
+  const [titel, setTitel] = useState(artikel?.titel ?? wachtrijConcept?.titel ?? '');
+  const [samenvatting, setSamenvatting] = useState(artikel?.samenvatting ?? wachtrijConcept?.samenvatting ?? '');
+  const [inhoud, setInhoud] = useState(artikel?.inhoudMarkdown ?? wachtrijConcept?.inhoud ?? '');
 
   async function genereerConcept() {
     if (!onderwerp.trim()) {
@@ -64,7 +77,7 @@ export default function ArtikelForm({
 
   return (
     <div className="space-y-10">
-      {!artikel && aiBeschikbaar && (
+      {!artikel && !wachtrijConcept && aiBeschikbaar && (
         <section className="rounded-md border border-teal bg-teal-light p-4">
           <h2 className="font-heading text-sm font-semibold text-teal-dark">
             Concept genereren met AI (optioneel)
@@ -109,6 +122,7 @@ export default function ArtikelForm({
 
       <form action={saveArtikelAction} className="space-y-5">
         {artikel && <input type="hidden" name="oldSlug" value={artikel.slug} />}
+        {wachtrijId && <input type="hidden" name="wachtrijId" value={wachtrijId} />}
         {artikel?.auteur && <input type="hidden" name="auteur" value={artikel.auteur} />}
 
         {artikel?.auteur && (

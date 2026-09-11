@@ -18,6 +18,7 @@ import {
 import { writeArtikel, deleteArtikelFile, writeVraag, deleteVraagFile, zetOverigeVragenNietUitgelicht } from '@/lib/content';
 import { slugify } from '@/lib/slugify';
 import { setSetting } from '@/lib/settings';
+import { verwijderUitWachtrij } from '@/lib/wachtrij';
 
 function startSession(username: string) {
   const session = createSessionCookieValue(username);
@@ -142,6 +143,9 @@ export async function saveArtikelAction(formData: FormData) {
     oldSlug
   );
 
+  const wachtrijId = String(formData.get('wachtrijId') ?? '');
+  if (wachtrijId) verwijderUitWachtrij(wachtrijId);
+
   revalidatePath('/', 'layout');
   redirect('/admin');
 }
@@ -174,6 +178,9 @@ export async function saveVraagAction(formData: FormData) {
     oldSlug
   );
   if (uitgelicht) zetOverigeVragenNietUitgelicht(slug);
+
+  const wachtrijId = String(formData.get('wachtrijId') ?? '');
+  if (wachtrijId) verwijderUitWachtrij(wachtrijId);
 
   revalidatePath('/', 'layout');
   redirect('/admin');
@@ -212,4 +219,13 @@ export async function verwijderInstellingAction(formData: FormData) {
   const naam = String(formData.get('naam') ?? '');
   if (naam) setSetting(naam, '');
   redirect('/admin/instellingen?verwijderd=1');
+}
+
+// --- Wachtrij (automatisch gegenereerde concepten) ---
+
+export async function afwijzenWachtrijAction(formData: FormData) {
+  requireAdminOrRedirect();
+  const id = String(formData.get('id') ?? '');
+  if (id) verwijderUitWachtrij(id);
+  redirect('/admin/wachtrij');
 }
